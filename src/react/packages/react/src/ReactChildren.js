@@ -13,7 +13,7 @@ import {
   REACT_PORTAL_TYPE,
 } from 'shared/ReactSymbols';
 
-import {isValidElement, cloneAndReplaceKey} from './ReactElement';
+import { isValidElement, cloneAndReplaceKey } from './ReactElement';
 import ReactDebugCurrentFrame from './ReactDebugCurrentFrame';
 
 const SEPARATOR = '.';
@@ -31,7 +31,7 @@ function escape(key) {
     '=': '=0',
     ':': '=2',
   };
-  const escapedString = ('' + key).replace(escapeRegex, function(match) {
+  const escapedString = ('' + key).replace(escapeRegex, function (match) {
     return escaperLookup[match];
   });
 
@@ -103,14 +103,13 @@ function traverseAllChildrenImpl(
   traverseContext,
 ) {
   const type = typeof children;
-
   if (type === 'undefined' || type === 'boolean') {
     // All of the above are perceived as null.
     children = null;
   }
 
   let invokeCallback = false;
-
+  // 判断children是不是一个element元素
   if (children === null) {
     invokeCallback = true;
   } else {
@@ -127,7 +126,6 @@ function traverseAllChildrenImpl(
         }
     }
   }
-
   if (invokeCallback) {
     callback(
       traverseContext,
@@ -144,7 +142,6 @@ function traverseAllChildrenImpl(
   let subtreeCount = 0; // Count of children found in the current subtree.
   const nextNamePrefix =
     nameSoFar === '' ? SEPARATOR : nameSoFar + SUBSEPARATOR;
-
   if (Array.isArray(children)) {
     for (let i = 0; i < children.length; i++) {
       child = children[i];
@@ -165,8 +162,8 @@ function traverseAllChildrenImpl(
           warning(
             didWarnAboutMaps,
             'Using Maps as children is unsupported and will likely yield ' +
-              'unexpected results. Convert it to a sequence/iterable of keyed ' +
-              'ReactElements instead.',
+            'unexpected results. Convert it to a sequence/iterable of keyed ' +
+            'ReactElements instead.',
           );
           didWarnAboutMaps = true;
         }
@@ -204,7 +201,6 @@ function traverseAllChildrenImpl(
       );
     }
   }
-
   return subtreeCount;
 }
 
@@ -255,7 +251,7 @@ function getComponentKey(component, index) {
 }
 
 function forEachSingleChild(bookKeeping, child, name) {
-  const {func, context} = bookKeeping;
+  const { func, context } = bookKeeping;
   func.call(context, child, bookKeeping.count++);
 }
 
@@ -286,8 +282,7 @@ function forEachChildren(children, forEachFunc, forEachContext) {
 }
 
 function mapSingleChildIntoContext(bookKeeping, child, childKey) {
-  const {result, keyPrefix, func, context} = bookKeeping;
-
+  const { result, keyPrefix, func, context } = bookKeeping;
   let mappedChild = func.call(context, child, bookKeeping.count++);
   if (Array.isArray(mappedChild)) {
     mapIntoWithKeyPrefixInternal(mappedChild, result, childKey, c => c);
@@ -298,10 +293,10 @@ function mapSingleChildIntoContext(bookKeeping, child, childKey) {
         // Keep both the (mapped) and old keys if they differ, just as
         // traverseAllChildren used to do for objects as children
         keyPrefix +
-          (mappedChild.key && (!child || child.key !== mappedChild.key)
-            ? escapeUserProvidedKey(mappedChild.key) + '/'
-            : '') +
-          childKey,
+        (mappedChild.key && (!child || child.key !== mappedChild.key)
+          ? escapeUserProvidedKey(mappedChild.key) + '/'
+          : '') +
+        childKey,
       );
     }
     result.push(mappedChild);

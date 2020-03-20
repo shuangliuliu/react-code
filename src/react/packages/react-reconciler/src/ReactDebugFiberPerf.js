@@ -7,9 +7,9 @@
  * @flow
  */
 
-import type {Fiber} from './ReactFiber';
+import type { Fiber } from './ReactFiber';
 
-import {enableUserTimingAPI} from 'shared/ReactFeatureFlags';
+import { enableUserTimingAPI } from 'shared/ReactFeatureFlags';
 import getComponentName from 'shared/getComponentName';
 import {
   HostRoot,
@@ -223,7 +223,8 @@ export function recordEffect(): void {
     effectCountInCurrentCommit++;
   }
 }
-
+// 初次渲染啥都没干
+// enableUserTimingAPI的值是__DEV__,只在开发环境下执行
 export function recordScheduleUpdate(): void {
   if (enableUserTimingAPI) {
     if (isCommitting) {
@@ -319,7 +320,7 @@ export function stopFailedWorkTimer(fiber: Fiber): void {
     fiber._debugIsCurrentlyTiming = false;
     const warning =
       fiber.tag === SuspenseComponent ||
-      fiber.tag === DehydratedSuspenseComponent
+        fiber.tag === DehydratedSuspenseComponent
         ? 'Rendering was suspended'
         : 'An error was thrown inside this error boundary';
     endFiberMark(fiber, null, warning);

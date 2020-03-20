@@ -7,10 +7,10 @@
  * @flow
  */
 
-import type {FiberRoot} from './ReactFiberRoot';
-import type {ExpirationTime} from './ReactFiberExpirationTime';
+import type { FiberRoot } from './ReactFiberRoot';
+import type { ExpirationTime } from './ReactFiberExpirationTime';
 
-import {NoWork} from './ReactFiberExpirationTime';
+import { NoWork } from './ReactFiberExpirationTime';
 
 // TODO: Offscreen updates should never suspend. However, a promise that
 // suspended inside an offscreen subtree should be able to ping at the priority
@@ -24,11 +24,12 @@ export function markPendingPriorityLevel(
   // additional updates may be scheduled. Clear `didError`, in case the update
   // is sufficient to fix the error.
   root.didError = false;
-
   // Update the latest and earliest pending times
   const earliestPendingTime = root.earliestPendingTime;
+  // 判断当前是否有等待的任务
   if (earliestPendingTime === NoWork) {
     // No other pending updates.
+    // 立即更新
     root.earliestPendingTime = root.latestPendingTime = expirationTime;
   } else {
     if (earliestPendingTime < expirationTime) {
@@ -246,25 +247,33 @@ export function didExpireAtExpirationTime(
     root.nextExpirationTimeToWorkOn = currentTime;
   }
 }
-
+// 初次渲染的时候root为FiberRoot
+/*
+该方法主要做了
+root.nextExpirationTimeToWorkOn =  expirationTime
+*/
 function findNextExpirationTimeToWorkOn(completedExpirationTime, root) {
+  // 最老和最新的在提交的时候被挂起的任务
   const earliestSuspendedTime = root.earliestSuspendedTime;
   const latestSuspendedTime = root.latestSuspendedTime;
+  // 最老和最新的不确定是否会挂起的优先级（所有任务进来一开始都是这个状态）
+  // 开始渲染的时候，值大于0
   const earliestPendingTime = root.earliestPendingTime;
   const latestPingedTime = root.latestPingedTime;
-
   // Work on the earliest pending time. Failing that, work on the latest
   // pinged time.
   let nextExpirationTimeToWorkOn =
     earliestPendingTime !== NoWork ? earliestPendingTime : latestPingedTime;
-
   // If there is no pending or pinged work, check if there's suspended work
   // that's lower priority than what we just completed.
+
+  // nextExpirationTimeToWorkOn为earliestPendingTime
   if (
     nextExpirationTimeToWorkOn === NoWork &&
     (completedExpirationTime === NoWork ||
       latestSuspendedTime < completedExpirationTime)
   ) {
+
     // The lowest priority suspended work is the work most likely to be
     // committed next. Let's start rendering it again, so that if it times out,
     // it's ready to commit.

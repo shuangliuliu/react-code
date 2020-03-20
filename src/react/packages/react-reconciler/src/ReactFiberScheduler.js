@@ -7,10 +7,10 @@
  * @flow
  */
 
-import type {Fiber} from './ReactFiber';
-import type {Batch, FiberRoot} from './ReactFiberRoot';
-import type {ExpirationTime} from './ReactFiberExpirationTime';
-import type {Interaction} from 'scheduler/src/Tracing';
+import type { Fiber } from './ReactFiber';
+import type { Batch, FiberRoot } from './ReactFiberRoot';
+import type { ExpirationTime } from './ReactFiberExpirationTime';
+import type { Interaction } from 'scheduler/src/Tracing';
 
 import {
   __interactionsRef,
@@ -124,8 +124,8 @@ import {
   startCommitLifeCyclesTimer,
   stopCommitLifeCyclesTimer,
 } from './ReactDebugFiberPerf';
-import {createWorkInProgress, assignFiberPropertiesInDEV} from './ReactFiber';
-import {onCommitRoot} from './ReactFiberDevToolsHook';
+import { createWorkInProgress, assignFiberPropertiesInDEV } from './ReactFiber';
+import { onCommitRoot } from './ReactFiberDevToolsHook';
 import {
   NoWork,
   Sync,
@@ -135,17 +135,17 @@ import {
   computeAsyncExpiration,
   computeInteractiveExpiration,
 } from './ReactFiberExpirationTime';
-import {ConcurrentMode, ProfileMode, NoContext} from './ReactTypeOfMode';
-import {enqueueUpdate, resetCurrentlyProcessingQueue} from './ReactUpdateQueue';
-import {createCapturedValue} from './ReactCapturedValue';
+import { ConcurrentMode, ProfileMode, NoContext } from './ReactTypeOfMode';
+import { enqueueUpdate, resetCurrentlyProcessingQueue } from './ReactUpdateQueue';
+import { createCapturedValue } from './ReactCapturedValue';
 import {
   isContextProvider as isLegacyContextProvider,
   popTopLevelContextObject as popTopLevelLegacyContextObject,
   popContext as popLegacyContext,
 } from './ReactFiberContext';
-import {popProvider, resetContextDependences} from './ReactFiberNewContext';
-import {resetHooks} from './ReactFiberHooks';
-import {popHostContext, popHostContainer} from './ReactFiberHostContext';
+import { popProvider, resetContextDependences } from './ReactFiberNewContext';
+import { resetHooks } from './ReactFiberHooks';
+import { popHostContext, popHostContainer } from './ReactFiberHostContext';
 import {
   recordCommitTime,
   startProfilerTimer,
@@ -155,8 +155,8 @@ import {
   checkThatStackIsEmpty,
   resetStackAfterFatalErrorInDev,
 } from './ReactFiberStack';
-import {beginWork} from './ReactFiberBeginWork';
-import {completeWork} from './ReactFiberCompleteWork';
+import { beginWork } from './ReactFiberBeginWork';
+import { completeWork } from './ReactFiberCompleteWork';
 import {
   throwException,
   unwindWork,
@@ -175,13 +175,13 @@ import {
   commitDetachRef,
   commitPassiveHookEffects,
 } from './ReactFiberCommitWork';
-import {ContextOnlyDispatcher} from './ReactFiberHooks';
+import { ContextOnlyDispatcher } from './ReactFiberHooks';
 
 export type Thenable = {
   then(resolve: () => mixed, reject?: () => mixed): mixed,
 };
 
-const {ReactCurrentDispatcher, ReactCurrentOwner} = ReactSharedInternals;
+const { ReactCurrentDispatcher, ReactCurrentOwner } = ReactSharedInternals;
 
 let didWarnAboutStateTransition;
 let didWarnSetStateChildContext;
@@ -194,9 +194,9 @@ if (enableSchedulerTracing) {
   invariant(
     __interactionsRef != null && __interactionsRef.current != null,
     'It is not supported to run the profiling version of a renderer (for example, `react-dom/profiling`) ' +
-      'without also replacing the `scheduler/tracing` module with `scheduler/tracing-profiling`. ' +
-      'Your bundler might have a setting for aliasing both modules. ' +
-      'Learn more at http://fb.me/react-profiling',
+    'without also replacing the `scheduler/tracing` module with `scheduler/tracing-profiling`. ' +
+    'Your bundler might have a setting for aliasing both modules. ' +
+    'Learn more at http://fb.me/react-profiling',
   );
 }
 
@@ -205,7 +205,7 @@ if (__DEV__) {
   didWarnSetStateChildContext = false;
   const didWarnStateUpdateForUnmountedComponent = {};
 
-  warnAboutUpdateOnUnmounted = function(fiber: Fiber, isClass: boolean) {
+  warnAboutUpdateOnUnmounted = function (fiber: Fiber, isClass: boolean) {
     // We show the whole stack but dedupe on the top component's name because
     // the problematic code almost always lies inside that component.
     const componentName = getComponentName(fiber.type) || 'ReactComponent';
@@ -215,8 +215,8 @@ if (__DEV__) {
     warningWithoutStack(
       false,
       "Can't perform a React state update on an unmounted component. This " +
-        'is a no-op, but it indicates a memory leak in your application. To ' +
-        'fix, cancel all subscriptions and asynchronous tasks in %s.%s',
+      'is a no-op, but it indicates a memory leak in your application. To ' +
+      'fix, cancel all subscriptions and asynchronous tasks in %s.%s',
       isClass
         ? 'the componentWillUnmount method'
         : 'a useEffect cleanup function',
@@ -225,7 +225,7 @@ if (__DEV__) {
     didWarnStateUpdateForUnmountedComponent[componentName] = true;
   };
 
-  warnAboutInvalidUpdates = function(instance: React$Component<any>) {
+  warnAboutInvalidUpdates = function (instance: React$Component<any>) {
     switch (ReactCurrentFiberPhase) {
       case 'getChildContext':
         if (didWarnSetStateChildContext) {
@@ -244,7 +244,7 @@ if (__DEV__) {
         warningWithoutStack(
           false,
           'Cannot update during an existing state transition (such as within ' +
-            '`render`). Render methods should be a pure function of props and state.',
+          '`render`). Render methods should be a pure function of props and state.',
         );
         didWarnAboutStateTransition = true;
         break;
@@ -311,7 +311,7 @@ if (__DEV__ && replayFailedUnitOfWorkWithInvokeGuardedCallback) {
       warningWithoutStack(
         false,
         'Could not replay rendering after an error. This is likely a bug in React. ' +
-          'Please file an issue.',
+        'Please file an issue.',
       );
       return;
     }
@@ -373,7 +373,9 @@ if (__DEV__ && replayFailedUnitOfWorkWithInvokeGuardedCallback) {
   };
 }
 
+// 重置操作，重置nextRoot
 function resetStack() {
+  // nextUnitOfWork我们当前正在进行的任务
   if (nextUnitOfWork !== null) {
     let interruptedWork = nextUnitOfWork.return;
     while (interruptedWork !== null) {
@@ -615,14 +617,14 @@ function commitRoot(root: FiberRoot, finishedWork: Fiber): void {
   invariant(
     root.current !== finishedWork,
     'Cannot commit the same tree as before. This is probably a bug ' +
-      'related to the return field. This error is likely caused by a bug ' +
-      'in React. Please file an issue.',
+    'related to the return field. This error is likely caused by a bug ' +
+    'in React. Please file an issue.',
   );
   const committedExpirationTime = root.pendingCommitExpirationTime;
   invariant(
     committedExpirationTime !== NoWork,
     'Cannot commit an incomplete root. This error is likely caused by a ' +
-      'bug in React. Please file an issue.',
+    'bug in React. Please file an issue.',
   );
   root.pendingCommitExpirationTime = NoWork;
 
@@ -691,7 +693,7 @@ function commitRoot(root: FiberRoot, finishedWork: Fiber): void {
       invariant(
         nextEffect !== null,
         'Should have next effect. This error is likely caused by a bug ' +
-          'in React. Please file an issue.',
+        'in React. Please file an issue.',
       );
       captureCommitPhaseError(nextEffect, error);
       // Clean-up
@@ -734,7 +736,7 @@ function commitRoot(root: FiberRoot, finishedWork: Fiber): void {
       invariant(
         nextEffect !== null,
         'Should have next effect. This error is likely caused by a bug ' +
-          'in React. Please file an issue.',
+        'in React. Please file an issue.',
       );
       captureCommitPhaseError(nextEffect, error);
       // Clean-up
@@ -786,7 +788,7 @@ function commitRoot(root: FiberRoot, finishedWork: Fiber): void {
       invariant(
         nextEffect !== null,
         'Should have next effect. This error is likely caused by a bug ' +
-          'in React. Please file an issue.',
+        'in React. Please file an issue.',
       );
       captureCommitPhaseError(nextEffect, error);
       if (nextEffect !== null) {
@@ -1144,11 +1146,13 @@ function completeUnitOfWork(workInProgress: Fiber): Fiber | null {
   return null;
 }
 
+// 通过调用beginWork判断是执行新work还是当前work
 function performUnitOfWork(workInProgress: Fiber): Fiber | null {
   // The current, flushed, state of this fiber is the alternate.
   // Ideally nothing should rely on this, but relying on it here
   // means that we don't need an additional field on the work in
   // progress.
+  // current指向的是RootFiber对象，workInProgress的alternate指向RootFiber
   const current = workInProgress.alternate;
 
   // See if beginning this work spawns more work.
@@ -1165,6 +1169,7 @@ function performUnitOfWork(workInProgress: Fiber): Fiber | null {
   }
 
   let next;
+  // enableProfilerTimer默认为true
   if (enableProfilerTimer) {
     if (workInProgress.mode & ProfileMode) {
       startProfilerTimer(workInProgress);
@@ -1195,7 +1200,6 @@ function performUnitOfWork(workInProgress: Fiber): Fiber | null {
   if (__DEV__ && ReactFiberInstrumentation.debugTool) {
     ReactFiberInstrumentation.debugTool.onBeginWork(workInProgress);
   }
-
   if (next === null) {
     // If this doesn't spawn new work, complete the current work.
     next = completeUnitOfWork(workInProgress);
@@ -1207,6 +1211,7 @@ function performUnitOfWork(workInProgress: Fiber): Fiber | null {
 }
 
 function workLoop(isYieldy) {
+  // nextUnitOfWork为FiberNode，我们即将更新的fiber
   if (!isYieldy) {
     // Flush work without yielding
     while (nextUnitOfWork !== null) {
@@ -1219,12 +1224,11 @@ function workLoop(isYieldy) {
     }
   }
 }
-
 function renderRoot(root: FiberRoot, isYieldy: boolean): void {
   invariant(
     !isWorking,
     'renderRoot was called recursively. This error is likely caused ' +
-      'by a bug in React. Please file an issue.',
+    'by a bug in React. Please file an issue.',
   );
 
   flushPassiveEffects();
@@ -1243,16 +1247,19 @@ function renderRoot(root: FiberRoot, isYieldy: boolean): void {
     nextUnitOfWork === null
   ) {
     // Reset the stack and start working from the root.
+    // 重置nextRoot
     resetStack();
     nextRoot = root;
+    // nextRenderExpirationTime是当前渲染任务，默认是nowork
     nextRenderExpirationTime = expirationTime;
+    // nextUnitOfWork是RootFiber的深拷贝
     nextUnitOfWork = createWorkInProgress(
       nextRoot.current,
       null,
       nextRenderExpirationTime,
     );
     root.pendingCommitExpirationTime = NoWork;
-
+    // 暂时先不管开始
     if (enableSchedulerTracing) {
       // Determine which interactions this batch of work currently includes,
       // So that we can accurately attribute time spent working on it,
@@ -1308,6 +1315,7 @@ function renderRoot(root: FiberRoot, isYieldy: boolean): void {
   let didFatal = false;
 
   startWorkLoopTimer(nextUnitOfWork);
+  // 暂时先不管结束
 
   do {
     try {
@@ -1354,8 +1362,8 @@ function renderRoot(root: FiberRoot, isYieldy: boolean): void {
         invariant(
           nextUnitOfWork !== null,
           'Failed to replay rendering after an error. This ' +
-            'is likely caused by a bug in React. Please file an issue ' +
-            'with a reproducing case to help us find it.',
+          'is likely caused by a bug in React. Please file an issue ' +
+          'with a reproducing case to help us find it.',
         );
 
         const sourceFiber: Fiber = nextUnitOfWork;
@@ -1432,7 +1440,7 @@ function renderRoot(root: FiberRoot, isYieldy: boolean): void {
   invariant(
     rootWorkInProgress !== null,
     'Finished root should have a work-in-progress. This error is likely ' +
-      'caused by a bug in React. Please file an issue.',
+    'caused by a bug in React. Please file an issue.',
   );
 
   // `nextRoot` points to the in-progress root. A non-null value indicates
@@ -1592,12 +1600,16 @@ function computeUniqueAsyncExpiration(): ExpirationTime {
   return lastUniqueAsyncExpiration;
 }
 
+// 返回是一个过期时间
 function computeExpirationForFiber(currentTime: ExpirationTime, fiber: Fiber) {
   const priorityLevel = getCurrentPriorityLevel();
 
   let expirationTime;
-  if ((fiber.mode & ConcurrentMode) === NoContext) {
+  // ConcurrentMode是常量0b001
+  //NoContext是常量0b000
+  if ((fiber.mode & ConcurrentMode) === NoContext) {   //初次渲染进入这里
     // Outside of concurrent mode, updates are always synchronous.
+    // Sync是一个常量Math.pow(2, 30) - 1
     expirationTime = Sync;
   } else if (isWorking && !isCommitting) {
     // During render phase, updates expire during as the current render.
@@ -1622,7 +1634,7 @@ function computeExpirationForFiber(currentTime: ExpirationTime, fiber: Fiber) {
         invariant(
           false,
           'Unknown priority level. This error is likely caused by a bug in ' +
-            'React. Please file an issue.',
+          'React. Please file an issue.',
         );
     }
 
@@ -1644,7 +1656,6 @@ function computeExpirationForFiber(currentTime: ExpirationTime, fiber: Fiber) {
   ) {
     lowestPriorityPendingInteractiveExpirationTime = expirationTime;
   }
-
   return expirationTime;
 }
 
@@ -1717,7 +1728,7 @@ function retryTimedOutBoundary(boundaryFiber: Fiber, thenable: Thenable) {
         invariant(
           false,
           'Pinged unknown suspense boundary type. ' +
-            'This is probably a bug in React.',
+          'This is probably a bug in React.',
         );
     }
   } else {
@@ -1740,29 +1751,31 @@ function retryTimedOutBoundary(boundaryFiber: Fiber, thenable: Thenable) {
     }
   }
 }
-
+// 该函数主要用于处理过期时间
 function scheduleWorkToRoot(fiber: Fiber, expirationTime): FiberRoot | null {
   recordScheduleUpdate();
-
   if (__DEV__) {
     if (fiber.tag === ClassComponent) {
       const instance = fiber.stateNode;
       warnAboutInvalidUpdates(instance);
     }
   }
-
   // Update the source fiber's expiration time
+  // 初始化RootFiber对象时，expirationtime为0
   if (fiber.expirationTime < expirationTime) {
     fiber.expirationTime = expirationTime;
   }
+  // alternate是当前fiber对象之前的fiber对象，初次应该是null
   let alternate = fiber.alternate;
   if (alternate !== null && alternate.expirationTime < expirationTime) {
     alternate.expirationTime = expirationTime;
   }
   // Walk the parent path to the root and update the child expiration time.
+  // return是当前元素的父节点
   let node = fiber.return;
   let root = null;
   if (node === null && fiber.tag === HostRoot) {
+    // stateNode是当前fiber对象的信息
     root = fiber.stateNode;
   } else {
     while (node !== null) {
@@ -1789,9 +1802,11 @@ function scheduleWorkToRoot(fiber: Fiber, expirationTime): FiberRoot | null {
     }
   }
 
+  // enableSchedulerTracing是一个bool值，为true
   if (enableSchedulerTracing) {
     if (root !== null) {
       const interactions = __interactionsRef.current;
+      // 初次渲染不会走这里
       if (interactions.size > 0) {
         const pendingInteractionMap = root.pendingInteractionMap;
         const pendingInteractions = pendingInteractionMap.get(expirationTime);
@@ -1824,6 +1839,7 @@ function scheduleWorkToRoot(fiber: Fiber, expirationTime): FiberRoot | null {
       }
     }
   }
+  // 将当前的顶层节点的fiber对象赋值给root，然后返回
   return root;
 }
 
@@ -1833,14 +1849,14 @@ export function warnIfNotCurrentlyBatchingInDev(fiber: Fiber): void {
       warningWithoutStack(
         false,
         'An update to %s inside a test was not wrapped in act(...).\n\n' +
-          'When testing, code that causes React state updates should be wrapped into act(...):\n\n' +
-          'act(() => {\n' +
-          '  /* fire events that update state */\n' +
-          '});\n' +
-          '/* assert on the output */\n\n' +
-          "This ensures that you're testing the behavior the user would see in the browser." +
-          ' Learn more at https://fb.me/react-wrap-tests-with-act' +
-          '%s',
+        'When testing, code that causes React state updates should be wrapped into act(...):\n\n' +
+        'act(() => {\n' +
+        '  /* fire events that update state */\n' +
+        '});\n' +
+        '/* assert on the output */\n\n' +
+        "This ensures that you're testing the behavior the user would see in the browser." +
+        ' Learn more at https://fb.me/react-wrap-tests-with-act' +
+        '%s',
         getComponentName(fiber.type),
         getStackByFiberInDevAndProd(fiber),
       );
@@ -1848,7 +1864,9 @@ export function warnIfNotCurrentlyBatchingInDev(fiber: Fiber): void {
   }
 }
 
+// 初次渲染只会执行scheduleWorkToRoot和markPendingPriorityLevel、requestWork
 function scheduleWork(fiber: Fiber, expirationTime: ExpirationTime) {
+  // 这个方法修改了fiber对象的过期时间,同时返回当前fiber对象的stateNode，stateNode返回的是RootFiber的FiberRoot对象
   const root = scheduleWorkToRoot(fiber, expirationTime);
   if (root === null) {
     if (__DEV__) {
@@ -1872,10 +1890,12 @@ function scheduleWork(fiber: Fiber, expirationTime: ExpirationTime) {
     nextRenderExpirationTime !== NoWork &&
     expirationTime > nextRenderExpirationTime
   ) {
+
     // This is an interruption. (Used for performance tracking.)
     interruptedBy = fiber;
     resetStack();
   }
+  // 给root添加了root.nextExpirationTimeToWorkOn = expirationTime
   markPendingPriorityLevel(root, expirationTime);
   if (
     // If we're in the render phase, we don't need to schedule this root
@@ -1894,9 +1914,9 @@ function scheduleWork(fiber: Fiber, expirationTime: ExpirationTime) {
     invariant(
       false,
       'Maximum update depth exceeded. This can happen when a ' +
-        'component repeatedly calls setState inside ' +
-        'componentWillUpdate or componentDidUpdate. React limits ' +
-        'the number of nested updates to prevent infinite loops.',
+      'component repeatedly calls setState inside ' +
+      'componentWillUpdate or componentDidUpdate. React limits ' +
+      'the number of nested updates to prevent infinite loops.',
     );
   }
 }
@@ -1933,7 +1953,7 @@ let isBatchingUpdates: boolean = false;
 let isUnbatchingUpdates: boolean = false;
 
 let completedBatches: Array<Batch> | null = null;
-
+// 是一个常量
 let originalStartTimeMs: number = now();
 let currentRendererTime: ExpirationTime = msToExpirationTime(
   originalStartTimeMs,
@@ -1946,7 +1966,9 @@ let nestedUpdateCount: number = 0;
 let lastCommittedRootDuringThisBatch: FiberRoot | null = null;
 
 function recomputeCurrentRendererTime() {
+  // now()当前时间，originalStartTimeMs是浏览器加载完bundle的时间，二者的差是一个时间戳
   const currentTimeMs = now() - originalStartTimeMs;
+  // currentRendererTime是一个具体的时间,初次渲染实际上等于魔法数字
   currentRendererTime = msToExpirationTime(currentTimeMs);
 }
 
@@ -1975,7 +1997,7 @@ function scheduleCallbackWithExpirationTime(
   const currentMs = now() - originalStartTimeMs;
   const expirationTimeMs = expirationTimeToMs(expirationTime);
   const timeout = expirationTimeMs - currentMs;
-  callbackID = scheduleDeferredCallback(performAsyncWork, {timeout});
+  callbackID = scheduleDeferredCallback(performAsyncWork, { timeout });
 }
 
 // For every call to renderRoot, one of onFatal, onComplete, onSuspend, and
@@ -2056,12 +2078,15 @@ function requestCurrentTime() {
   //
   // But the scheduler time can only be updated if there's no pending work, or
   // if we know for certain that we're not in the middle of an event.
-
   if (isRendering) {
     // We're already rendering. Return the most recently read time.
     return currentSchedulerTime;
   }
   // Check if there's pending work.
+
+  // nextFlushedExpirationTime：全局变量，默认为NoWork
+  // NoWork默认为0，Never默认为1
+  // nextFlushedExpirationTime：下一冲的过期时间
   findHighestPriorityRoot();
   if (
     nextFlushedExpirationTime === NoWork ||
@@ -2090,7 +2115,7 @@ function requestWork(root: FiberRoot, expirationTime: ExpirationTime) {
     // the currently rendering batch.
     return;
   }
-
+  // 是否批量更新,默认为false
   if (isBatchingUpdates) {
     // Flush work at the end of the batch.
     if (isUnbatchingUpdates) {
@@ -2104,6 +2129,7 @@ function requestWork(root: FiberRoot, expirationTime: ExpirationTime) {
   }
 
   // TODO: Get rid of Sync and use current time?
+  // 初次渲染只会进入该判断
   if (expirationTime === Sync) {
     performSyncWork();
   } else {
@@ -2111,12 +2137,15 @@ function requestWork(root: FiberRoot, expirationTime: ExpirationTime) {
   }
 }
 
+// 把当前的fiberroot放入schedule中
 function addRootToSchedule(root: FiberRoot, expirationTime: ExpirationTime) {
   // Add the root to the schedule.
   // Check if this root is already part of the schedule.
+  // nextScheduledRoot指向的下一个rootfiber
   if (root.nextScheduledRoot === null) {
     // This root is not already scheduled. Add it.
     root.expirationTime = expirationTime;
+    // 上一个被调度的FiberRoot
     if (lastScheduledRoot === null) {
       firstScheduledRoot = lastScheduledRoot = root;
       root.nextScheduledRoot = root;
@@ -2134,7 +2163,7 @@ function addRootToSchedule(root: FiberRoot, expirationTime: ExpirationTime) {
     }
   }
 }
-
+// requestCurrentTime调用的时候是null，之后会将fiberroot赋值给firstScheduledRoot和lastScheduledRoot
 function findHighestPriorityRoot() {
   let highestPriorityWork = NoWork;
   let highestPriorityRoot = null;
@@ -2152,7 +2181,7 @@ function findHighestPriorityRoot() {
         invariant(
           previousScheduledRoot !== null && lastScheduledRoot !== null,
           'Should have a previous and last root. This error is likely ' +
-            'caused by a bug in React. Please file an issue.',
+          'caused by a bug in React. Please file an issue.',
         );
         if (root === root.nextScheduledRoot) {
           // This is the only root in the list.
@@ -2177,12 +2206,14 @@ function findHighestPriorityRoot() {
         }
         root = previousScheduledRoot.nextScheduledRoot;
       } else {
+        // 初次渲染进入这里
         if (remainingExpirationTime > highestPriorityWork) {
           // Update the priority, if it's higher
           highestPriorityWork = remainingExpirationTime;
           highestPriorityRoot = root;
         }
         if (root === lastScheduledRoot) {
+          // 直接跳出循环
           break;
         }
         if (highestPriorityWork === Sync) {
@@ -2246,8 +2277,8 @@ function performSyncWork() {
 function performWork(minExpirationTime: ExpirationTime, isYieldy: boolean) {
   // Keep working on roots until there's no more work, or until there's a higher
   // priority event.
+  // 找出优先级最高的root
   findHighestPriorityRoot();
-
   if (isYieldy) {
     recomputeCurrentRendererTime();
     currentSchedulerTime = currentRendererTime;
@@ -2274,6 +2305,7 @@ function performWork(minExpirationTime: ExpirationTime, isYieldy: boolean) {
       currentSchedulerTime = currentRendererTime;
     }
   } else {
+    // 初次渲染会走入这里
     while (
       nextFlushedRoot !== null &&
       nextFlushedExpirationTime !== NoWork &&
@@ -2308,7 +2340,7 @@ function flushRoot(root: FiberRoot, expirationTime: ExpirationTime) {
   invariant(
     !isRendering,
     'work.commit(): Cannot commit while already rendering. This likely ' +
-      'means you attempted to commit from inside a lifecycle method.',
+    'means you attempted to commit from inside a lifecycle method.',
   );
   // Perform work on root as if the given expiration time is the current time.
   // This has the effect of synchronously flushing all work up to and
@@ -2356,23 +2388,22 @@ function performWorkOnRoot(
   invariant(
     !isRendering,
     'performWorkOnRoot was called recursively. This error is likely caused ' +
-      'by a bug in React. Please file an issue.',
+    'by a bug in React. Please file an issue.',
   );
 
   isRendering = true;
-
   // Check if this is async work or sync/expired work.
+  // 初次渲染进入该判断
   if (!isYieldy) {
     // Flush work without yielding.
     // TODO: Non-yieldy work does not necessarily imply expired work. A renderer
     // may want to perform some work without yielding, but also without
     // requiring the root to complete (by triggering placeholders).
-
     let finishedWork = root.finishedWork;
     if (finishedWork !== null) {
       // This root is already complete. We can commit it.
       completeRoot(root, finishedWork, expirationTime);
-    } else {
+    } else {   //初次渲染
       root.finishedWork = null;
       // If this root previously suspended, clear its existing timeout, since
       // we're about to try rendering again.
@@ -2470,7 +2501,7 @@ function onUncaughtError(error: mixed) {
   invariant(
     nextFlushedRoot !== null,
     'Should be working on a root. This error is likely caused by a bug in ' +
-      'React. Please file an issue.',
+    'React. Please file an issue.',
   );
   // Unschedule this root so we don't work on it again until there's
   // another update.
@@ -2516,7 +2547,7 @@ function flushSync<A, R>(fn: (a: A) => R, a: A): R {
   invariant(
     !isRendering,
     'flushSync was called from inside a lifecycle method. It cannot be ' +
-      'called when React is already rendering.',
+    'called when React is already rendering.',
   );
   const previousIsBatchingUpdates = isBatchingUpdates;
   isBatchingUpdates = true;

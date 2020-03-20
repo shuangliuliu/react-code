@@ -50,7 +50,7 @@ export const REACT_LAZY_TYPE = hasSymbol ? Symbol.for('react.lazy') : 0xead4;
 const MAYBE_ITERATOR_SYMBOL = typeof Symbol === 'function' && Symbol.iterator;
 const FAUX_ITERATOR_SYMBOL = '@@iterator';
 
-export function getIteratorFn(maybeIterable: ?any): ?() => ?Iterator<*> {
+export function getIteratorFn(maybeIterable: ?any): ?() =>?Iterator<*> {
   if (maybeIterable === null || typeof maybeIterable !== 'object') {
     return null;
   }

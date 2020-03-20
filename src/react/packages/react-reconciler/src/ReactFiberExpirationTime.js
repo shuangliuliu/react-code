@@ -20,6 +20,7 @@ const MAGIC_NUMBER_OFFSET = MAX_SIGNED_31_BIT_INT - 1;
 
 // 1 unit of expiration time represents 10ms.
 export function msToExpirationTime(ms: number): ExpirationTime {
+  // console.log(ms)
   // Always add an offset so that we don't clash with the magic number for NoWork.
   return MAGIC_NUMBER_OFFSET - ((ms / UNIT_SIZE) | 0);
 }
@@ -31,7 +32,7 @@ export function expirationTimeToMs(expirationTime: ExpirationTime): number {
 function ceiling(num: number, precision: number): number {
   return (((num / precision) | 0) + 1) * precision;
 }
-
+// 计算过期时间
 function computeExpirationBucket(
   currentTime,
   expirationInMs,
@@ -49,6 +50,9 @@ function computeExpirationBucket(
 export const LOW_PRIORITY_EXPIRATION = 5000;
 export const LOW_PRIORITY_BATCH_SIZE = 250;
 
+/*
+返回低优先级的expirationTime时间,
+低优先的两个更新操作的时间间隔25ms时，会得到同一个过期时间，这样可以做到批量合并update，做到批量更新 */
 export function computeAsyncExpiration(
   currentTime: ExpirationTime,
 ): ExpirationTime {
@@ -72,7 +76,7 @@ export function computeAsyncExpiration(
 // problems, by expiring fast.
 export const HIGH_PRIORITY_EXPIRATION = __DEV__ ? 500 : 150;
 export const HIGH_PRIORITY_BATCH_SIZE = 100;
-
+// 返回高优先级的expirationTime时间,高优先级的过期时间间隔是10ms
 export function computeInteractiveExpiration(currentTime: ExpirationTime) {
   return computeExpirationBucket(
     currentTime,

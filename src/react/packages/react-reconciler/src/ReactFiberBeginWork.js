@@ -7,11 +7,11 @@
  * @flow
  */
 
-import type {ReactProviderType, ReactContext} from 'shared/ReactTypes';
-import type {Fiber} from './ReactFiber';
-import type {FiberRoot} from './ReactFiberRoot';
-import type {ExpirationTime} from './ReactFiberExpirationTime';
-import type {SuspenseState} from './ReactFiberSuspenseComponent';
+import type { ReactProviderType, ReactContext } from 'shared/ReactTypes';
+import type { Fiber } from './ReactFiber';
+import type { FiberRoot } from './ReactFiberRoot';
+import type { ExpirationTime } from './ReactFiberExpirationTime';
+import type { SuspenseState } from './ReactFiberSuspenseComponent';
 
 import checkPropTypes from 'prop-types/checkPropTypes';
 
@@ -57,8 +57,8 @@ import invariant from 'shared/invariant';
 import shallowEqual from 'shared/shallowEqual';
 import getComponentName from 'shared/getComponentName';
 import ReactStrictModeWarnings from './ReactStrictModeWarnings';
-import {refineResolvedLazyComponent} from 'shared/ReactLazyComponent';
-import {REACT_LAZY_TYPE} from 'shared/ReactSymbols';
+import { refineResolvedLazyComponent } from 'shared/ReactLazyComponent';
+import { REACT_LAZY_TYPE } from 'shared/ReactSymbols';
 import warning from 'shared/warning';
 import warningWithoutStack from 'shared/warningWithoutStack';
 import {
@@ -66,15 +66,15 @@ import {
   getCurrentFiberOwnerNameInDevOrNull,
   getCurrentFiberStackInDev,
 } from './ReactCurrentFiber';
-import {startWorkTimer, cancelWorkTimer} from './ReactDebugFiberPerf';
+import { startWorkTimer, cancelWorkTimer } from './ReactDebugFiberPerf';
 
 import {
   mountChildFibers,
   reconcileChildFibers,
   cloneChildFibers,
 } from './ReactChildFiber';
-import {processUpdateQueue} from './ReactUpdateQueue';
-import {NoWork, Never} from './ReactFiberExpirationTime';
+import { processUpdateQueue } from './ReactUpdateQueue';
+import { NoWork, Never } from './ReactFiberExpirationTime';
 import {
   ConcurrentMode,
   NoContext,
@@ -85,7 +85,7 @@ import {
   shouldSetTextContent,
   shouldDeprioritizeSubtree,
 } from './ReactFiberHostConfig';
-import {pushHostContext, pushHostContainer} from './ReactFiberHostContext';
+import { pushHostContext, pushHostContainer } from './ReactFiberHostContext';
 import {
   pushProvider,
   propagateContextChange,
@@ -93,8 +93,8 @@ import {
   prepareToReadContext,
   calculateChangedBits,
 } from './ReactFiberNewContext';
-import {resetHooks, renderWithHooks, bailoutHooks} from './ReactFiberHooks';
-import {stopProfilerTimerIfRunning} from './ReactProfilerTimer';
+import { resetHooks, renderWithHooks, bailoutHooks } from './ReactFiberHooks';
+import { stopProfilerTimerIfRunning } from './ReactProfilerTimer';
 import {
   getMaskedContext,
   getUnmaskedContext,
@@ -715,7 +715,7 @@ function updateClassComponent(
       warning(
         didWarnAboutReassigningProps,
         'It looks like %s is reassigning its own `this.props` while rendering. ' +
-          'This is not supported and can lead to confusing bugs.',
+        'This is not supported and can lead to confusing bugs.',
         getComponentName(workInProgress.type) || 'a component',
       );
       didWarnAboutReassigningProps = true;
@@ -841,8 +841,8 @@ function updateHostRoot(current, workInProgress, renderExpirationTime) {
   invariant(
     updateQueue !== null,
     'If the root does not have an updateQueue, we should have already ' +
-      'bailed out. This error is likely caused by a bug in React. Please ' +
-      'file an issue.',
+    'bailed out. This error is likely caused by a bug in React. Please ' +
+    'file an issue.',
   );
   const nextProps = workInProgress.pendingProps;
   const prevState = workInProgress.memoizedState;
@@ -1070,7 +1070,7 @@ function mountLazyComponent(
       invariant(
         false,
         'Element type is invalid. Received a promise that resolves to: %s. ' +
-          'Lazy element type must resolve to a class or function.%s',
+        'Lazy element type must resolve to a class or function.%s',
         Component,
         hint,
       );
@@ -1173,7 +1173,7 @@ function mountIndeterminateComponent(
         warningWithoutStack(
           false,
           "The <%s /> component appears to have a render method, but doesn't extend React.Component. " +
-            'This is likely to cause errors. Change %s to extend React.Component instead.',
+          'This is likely to cause errors. Change %s to extend React.Component instead.',
           componentName,
           componentName,
         );
@@ -1308,8 +1308,8 @@ function validateFunctionComponentInDev(workInProgress: Fiber, Component: any) {
       warning(
         false,
         'Function components cannot be given refs. ' +
-          'Attempts to access this ref will fail. ' +
-          'Did you mean to use React.forwardRef()?%s',
+        'Attempts to access this ref will fail. ' +
+        'Did you mean to use React.forwardRef()?%s',
         info,
       );
     }
@@ -1657,7 +1657,7 @@ function updateDehydratedSuspenseComponent(
     invariant(
       returnFiber !== null,
       'Suspense boundaries are never on the root. ' +
-        'This is probably a bug in React.',
+      'This is probably a bug in React.',
     );
     const last = returnFiber.lastEffect;
     if (last !== null) {
@@ -1815,7 +1815,7 @@ function updateContextConsumer(
           warning(
             false,
             'Rendering <Context> directly is not supported and will be removed in ' +
-              'a future major release. Did you mean to render <Context.Consumer> instead?',
+            'a future major release. Did you mean to render <Context.Consumer> instead?',
           );
         }
       }
@@ -1830,9 +1830,9 @@ function updateContextConsumer(
     warningWithoutStack(
       typeof render === 'function',
       'A context consumer was rendered with multiple children, or a child ' +
-        "that isn't a function. A context consumer expects a single child " +
-        'that is a function. If you did pass a function, make sure there ' +
-        'is no trailing or leading whitespace around it.',
+      "that isn't a function. A context consumer expects a single child " +
+      'that is a function. If you did pass a function, make sure there ' +
+      'is no trailing or leading whitespace around it.',
     );
   }
 
@@ -1898,13 +1898,14 @@ function beginWork(
   const updateExpirationTime = workInProgress.expirationTime;
 
   if (current !== null) {
+    // memoizedProps为上次渲染的props
     const oldProps = current.memoizedProps;
+    // pendingProps新的变动带来的props
     const newProps = workInProgress.pendingProps;
-
     if (oldProps !== newProps || hasLegacyContextChanged()) {
       // If props or context changed, mark the fiber as having performed work.
       // This may be unset if the props are determined to be equal later (memo).
-      didReceiveUpdate = true;
+      console.log(didReceiveUpdate)
     } else if (updateExpirationTime < renderExpirationTime) {
       didReceiveUpdate = false;
       // This fiber does not have any pending work. Bailout without entering
@@ -2001,10 +2002,8 @@ function beginWork(
   } else {
     didReceiveUpdate = false;
   }
-
   // Before entering the begin phase, clear the expiration time.
   workInProgress.expirationTime = NoWork;
-
   switch (workInProgress.tag) {
     case IndeterminateComponent: {
       const elementType = workInProgress.elementType;
@@ -2174,8 +2173,8 @@ function beginWork(
   invariant(
     false,
     'Unknown unit of work tag. This error is likely caused by a bug in ' +
-      'React. Please file an issue.',
+    'React. Please file an issue.',
   );
 }
 
-export {beginWork};
+export { beginWork };

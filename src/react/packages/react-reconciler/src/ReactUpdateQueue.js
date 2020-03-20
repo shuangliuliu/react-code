@@ -84,23 +84,23 @@
 // regardless of priority. Intermediate state may vary according to system
 // resources, but the final state is always the same.
 
-import type {Fiber} from './ReactFiber';
-import type {ExpirationTime} from './ReactFiberExpirationTime';
+import type { Fiber } from './ReactFiber';
+import type { ExpirationTime } from './ReactFiberExpirationTime';
 
-import {NoWork} from './ReactFiberExpirationTime';
+import { NoWork } from './ReactFiberExpirationTime';
 import {
   enterDisallowedContextReadInDEV,
   exitDisallowedContextReadInDEV,
 } from './ReactFiberNewContext';
-import {Callback, ShouldCapture, DidCapture} from 'shared/ReactSideEffectTags';
-import {ClassComponent} from 'shared/ReactWorkTags';
+import { Callback, ShouldCapture, DidCapture } from 'shared/ReactSideEffectTags';
+import { ClassComponent } from 'shared/ReactWorkTags';
 
 import {
   debugRenderPhaseSideEffects,
   debugRenderPhaseSideEffectsForStrictMode,
 } from 'shared/ReactFeatureFlags';
 
-import {StrictMode} from './ReactTypeOfMode';
+import { StrictMode } from './ReactTypeOfMode';
 
 import invariant from 'shared/invariant';
 import warningWithoutStack from 'shared/warningWithoutStack';
@@ -109,17 +109,21 @@ export type Update<State> = {
   expirationTime: ExpirationTime,
 
   tag: 0 | 1 | 2 | 3,
+  // 更新内容，比如ReactDOM.render()的第一个参数、setstate的第一个参数
   payload: any,
+  // 更新对应的回调，render和setstate的回调
   callback: (() => mixed) | null,
-
+  // 指向下一个更新
   next: Update<State> | null,
   nextEffect: Update<State> | null,
 };
 
 export type UpdateQueue<State> = {
+  // 每次更新完之后的state
   baseState: State,
-
+  // 队列中的第一个update
   firstUpdate: Update<State> | null,
+  // 队列中最后一个update
   lastUpdate: Update<State> | null,
 
   firstCapturedUpdate: Update<State> | null,
@@ -155,6 +159,7 @@ if (__DEV__) {
 
 export function createUpdateQueue<State>(baseState: State): UpdateQueue<State> {
   const queue: UpdateQueue<State> = {
+    // 每次更新之后的state,应该是state对象
     baseState,
     firstUpdate: null,
     lastUpdate: null,
@@ -192,12 +197,15 @@ function cloneUpdateQueue<State>(
 
 export function createUpdate(expirationTime: ExpirationTime): Update<*> {
   return {
+    //更新的过期时间
     expirationTime: expirationTime,
-
+    //更新的类型
     tag: UpdateState,
+    // 更新内容，比如ReactDOM.render()的第一个参数、setstate的第一个参数
     payload: null,
+    // 更新对应的回调，render和setstate的回调
     callback: null,
-
+    // 指向下一个更新
     next: null,
     nextEffect: null,
   };
@@ -208,6 +216,7 @@ function appendUpdateToQueue<State>(
   update: Update<State>,
 ) {
   // Append the update to the end of the list.
+  // 初次渲染的时候updateQueue是空的,将update赋值给当前队列的第一个更新和最后一个更新
   if (queue.lastUpdate === null) {
     // Queue is empty
     queue.firstUpdate = queue.lastUpdate = update;
@@ -219,14 +228,22 @@ function appendUpdateToQueue<State>(
 
 export function enqueueUpdate<State>(fiber: Fiber, update: Update<State>) {
   // Update queues are created lazily.
+  /*
+    alternate是当前fiber对象更新之前的fiber对象，
+    每次更新之后会将新的fiber对象赋值给alternate，下次更新的时候直接从alternate中获取旧的fiber对象进行更行
+  */
   const alternate = fiber.alternate;
   let queue1;
   let queue2;
+  // ReactDOM.render初次渲染alternate肯定是空的，当前的fiber对象的updateQueue也是空的，给当前的fiber对象创建一个updateQueue
   if (alternate === null) {
     // There's only one fiber.
+
+    // ReactDOM.render初次渲染updateQueue是空的
     queue1 = fiber.updateQueue;
     queue2 = null;
     if (queue1 === null) {
+      // 创建一个updateQueue
       queue1 = fiber.updateQueue = createUpdateQueue(fiber.memoizedState);
     }
   } else {
@@ -253,8 +270,10 @@ export function enqueueUpdate<State>(fiber: Fiber, update: Update<State>) {
       }
     }
   }
+  // 初次渲染会进入这里
   if (queue2 === null || queue1 === queue2) {
     // There's only a single queue.
+    // 将update加入到updateQueue中
     appendUpdateToQueue(queue1, update);
   } else {
     // There are two queues. We need to append the update to both queues,
@@ -283,9 +302,9 @@ export function enqueueUpdate<State>(fiber: Fiber, update: Update<State>) {
       warningWithoutStack(
         false,
         'An update (setState, replaceState, or forceUpdate) was scheduled ' +
-          'from inside an update function. Update functions should be pure, ' +
-          'with zero side-effects. Consider using componentDidUpdate or a ' +
-          'callback.',
+        'from inside an update function. Update functions should be pure, ' +
+        'with zero side-effects. Consider using componentDidUpdate or a ' +
+        'callback.',
       );
       didWarnUpdateInsideUpdate = true;
     }
@@ -567,7 +586,7 @@ function callCallback(callback, context) {
   invariant(
     typeof callback === 'function',
     'Invalid argument passed as callback. Expected a function. Instead ' +
-      'received: %s',
+    'received: %s',
     callback,
   );
   callback.call(context);
