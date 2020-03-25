@@ -1774,8 +1774,9 @@ function scheduleWorkToRoot(fiber: Fiber, expirationTime): FiberRoot | null {
   // return是当前元素的父节点
   let node = fiber.return;
   let root = null;
+  // tag为更新的类型
   if (node === null && fiber.tag === HostRoot) {
-    // stateNode是当前fiber对象的信息
+    // stateNode是当前fiber对象的信息，dom节点信息
     root = fiber.stateNode;
   } else {
     while (node !== null) {
@@ -1866,7 +1867,8 @@ export function warnIfNotCurrentlyBatchingInDev(fiber: Fiber): void {
 
 // 初次渲染只会执行scheduleWorkToRoot和markPendingPriorityLevel、requestWork
 function scheduleWork(fiber: Fiber, expirationTime: ExpirationTime) {
-  // 这个方法修改了fiber对象的过期时间,同时返回当前fiber对象的stateNode，stateNode返回的是RootFiber的FiberRoot对象
+  // stateNode是当前fiber有关的本地状态，dom节点
+  // 这个方法修改了fiber对象与其父节点的过期时间,同时返回当前fiber对象的stateNode
   const root = scheduleWorkToRoot(fiber, expirationTime);
   if (root === null) {
     if (__DEV__) {

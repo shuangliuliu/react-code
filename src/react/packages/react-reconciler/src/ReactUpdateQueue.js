@@ -230,7 +230,7 @@ export function enqueueUpdate<State>(fiber: Fiber, update: Update<State>) {
   // Update queues are created lazily.
   /*
     alternate是当前fiber对象更新之前的fiber对象，
-    每次更新之后会将新的fiber对象赋值给alternate，下次更新的时候直接从alternate中获取旧的fiber对象进行更行
+    每次更新之后会将新的fiber对象赋值给alternate，下次更新的时候直接从alternate中获取旧的fiber对象进行更新
   */
   const alternate = fiber.alternate;
   let queue1;
@@ -244,7 +244,7 @@ export function enqueueUpdate<State>(fiber: Fiber, update: Update<State>) {
     queue2 = null;
     if (queue1 === null) {
       // 创建一个updateQueue
-      queue1 = fiber.updateQueue = createUpdateQueue(fiber.memoizedState);
+      queue1 = fiber.updateQueue = createUpdateQueue(fiber.memoizedState); //memoizedState是上次更新的state
     }
   } else {
     // There are two owners.
