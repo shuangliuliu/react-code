@@ -1968,9 +1968,9 @@ let nestedUpdateCount: number = 0;
 let lastCommittedRootDuringThisBatch: FiberRoot | null = null;
 
 function recomputeCurrentRendererTime() {
-  // now()当前时间，originalStartTimeMs是浏览器加载完bundle的时间，二者的差是一个时间戳
+  // now()当前时间，originalStartTimeMs是浏览器加载完bundle的时间，二者的差类似一个时间戳
   const currentTimeMs = now() - originalStartTimeMs;
-  // currentRendererTime是一个具体的时间,初次渲染实际上等于魔法数字
+  // currentRendererTime是一个具体的时间
   currentRendererTime = msToExpirationTime(currentTimeMs);
 }
 
