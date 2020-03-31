@@ -135,10 +135,12 @@ function scheduleRootUpdate(
       );
     }
   }
+  // 1、创建更新
   const update = createUpdate(expirationTime);
   // Caution: React DevTools currently depends on this property
   // being called "element".
   // 修改更新内容，比如是ReactDOM.render的第一个参数，setstate的第一个参数
+  // 2、修改更新内容
   update.payload = { element };
 
   callback = callback === undefined ? null : callback;
@@ -152,7 +154,7 @@ function scheduleRootUpdate(
     update.callback = callback;
   }
   flushPassiveEffects();
-  // 将更新加入到更新队列中,传入当前fiber对象和update
+  // 3、将更新加入到更新队列中,传入当前fiber对象和update
   enqueueUpdate(current, update);
   scheduleWork(current, expirationTime);
   return expirationTime;
@@ -186,7 +188,7 @@ export function updateContainerAtExpirationTime(
   } else {
     container.pendingContext = context;
   }
-  // 此时的current是RootFiber对象
+  // 此时的current是RootFiber对象，element是React.DOM的第一个参数
   return scheduleRootUpdate(current, element, expirationTime, callback);
 }
 

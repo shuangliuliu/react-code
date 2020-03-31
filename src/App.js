@@ -1,21 +1,21 @@
 import React, { Component } from 'react'
-import { HashRouter as Router, Route, Switch, Redirect, Link } from 'react-router-dom'
-import SuspenseDemo from './lazy/index'
-// import Concurrent from './concurrent/index'
 export default class App extends Component {
+  constructor() {
+    super(...arguments)
+    this.state = {
+      data: 1
+    }
+  }
+  handleClick() {
+    this.setState({
+      data: 3
+    })
+  }
   render() {
     return (
       <div className="App">
-        <nav className="navs">
-        </nav>
-        <Router>
-          <Link to="/suspense">SuspenseDemo</Link>
-          {/* <Link to="/concurrent">ConcurrentModeDemo</Link> */}
-          <Switch>
-            <Route path="/suspense" component={SuspenseDemo} />
-            {/* <Route path="/concurrent" component={Concurrent} /> */}
-          </Switch>
-        </Router>
+        <h6>this is App COmponent</h6>
+        <button onClick={this.handleClick.bind(this)}></button>
       </div>
     )
   }

@@ -1606,10 +1606,10 @@ function computeExpirationForFiber(currentTime: ExpirationTime, fiber: Fiber) {
 
   let expirationTime;
   // ConcurrentMode是常量0b001
-  //NoContext是常量0b000
+  //NoContext是常量0b000，代表着同步更新
   if ((fiber.mode & ConcurrentMode) === NoContext) {   //初次渲染进入这里
     // Outside of concurrent mode, updates are always synchronous.
-    // Sync是一个常量Math.pow(2, 30) - 1
+    // Sync是一个常量Math.pow(2, 30) - 1,相当于是MAGIC_NUMBER_OFFSET
     expirationTime = Sync;
   } else if (isWorking && !isCommitting) {
     // During render phase, updates expire during as the current render.
@@ -2143,7 +2143,7 @@ function requestWork(root: FiberRoot, expirationTime: ExpirationTime) {
 function addRootToSchedule(root: FiberRoot, expirationTime: ExpirationTime) {
   // Add the root to the schedule.
   // Check if this root is already part of the schedule.
-  // nextScheduledRoot指向的下一个rootfiber
+  // 每次都会把当前FiberRoot的nextScheduledRoot置为null
   if (root.nextScheduledRoot === null) {
     // This root is not already scheduled. Add it.
     root.expirationTime = expirationTime;
@@ -2165,7 +2165,6 @@ function addRootToSchedule(root: FiberRoot, expirationTime: ExpirationTime) {
     }
   }
 }
-// requestCurrentTime调用的时候是null，之后会将fiberroot赋值给firstScheduledRoot和lastScheduledRoot
 function findHighestPriorityRoot() {
   let highestPriorityWork = NoWork;
   let highestPriorityRoot = null;
