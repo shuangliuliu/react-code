@@ -136,10 +136,12 @@ function PureComponent(props, context, updater) {
   this.updater = updater || ReactNoopUpdateQueue;
 }
 
-const pureComponentPrototype = (PureComponent.prototype = new ComponentDummy());
+const pureComponentPrototype = (PureComponent.prototype = new ComponentDummy())
 pureComponentPrototype.constructor = PureComponent;
 // Avoid an extra prototype jump for these methods.
+// console.log(pureComponentPrototype, Component.prototype)
 Object.assign(pureComponentPrototype, Component.prototype);
+// console.log(pureComponentPrototype, PureComponent.prototype)
 pureComponentPrototype.isPureReactComponent = true;
 
 export { Component, PureComponent };

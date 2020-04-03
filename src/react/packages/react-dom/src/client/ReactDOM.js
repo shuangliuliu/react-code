@@ -682,6 +682,24 @@ const ReactDOM: Object = {
       callback,
     );
   },
+
+  /*
+    React创建更新的三种方式
+    1、React.DOM.render，初次渲染
+    2、setState或forceState
+    3、replaceState已经废弃掉
+  */
+
+  /*
+    ReactDOM.render更新步骤
+    1、创建ReactRoot
+    2、创建FiberRoot和RootFiber
+    3、创建更新
+  */
+  /*
+    在调用render方法之前会先调用React.createElement，创建一个ReactElement，type属性是classComponent
+    或者functionComponent的话，它们经过实例化之后，可以把实例化结果的dom节点渲染到浏览器上
+  */
   render(
     element: React$Element<any>,
     container: DOMContainer,

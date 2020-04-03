@@ -111,6 +111,7 @@ function defineRefPropWarningGetter(props, displayName) {
 const ReactElement = function (type, key, ref, self, source, owner, props) {
   const element = {
     // This tag allows us to uniquely identify this as a React Element
+    // 标识节点的类型，值为REACT_ELEMENT_TYPE
     $$typeof: REACT_ELEMENT_TYPE,
 
     // Built-in properties that belong on the element
@@ -168,7 +169,11 @@ const ReactElement = function (type, key, ref, self, source, owner, props) {
  * Create and return a new ReactElement of the given type.
  * See https://reactjs.org/docs/react-api.html#createelement
  */
+// type:节点类型值为dom节点、classComponent、functionComponent、react提供的原生组件
+// config：节点创建节点时添加的所有attrs
+// children：节点的子节点
 export function createElement(type, config, children) {
+  // console.log(type)
   let propName;
   // Reserved names are extracted
   const props = {};
@@ -218,6 +223,10 @@ export function createElement(type, config, children) {
   }
 
   // Resolve default props
+  /*
+    class Com extends React.Component
+    Com.defaultProps = {value: 1}
+  */
   if (type && type.defaultProps) {
     const defaultProps = type.defaultProps;
     for (propName in defaultProps) {

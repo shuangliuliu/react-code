@@ -1,6 +1,5 @@
 import React, { Component } from 'react'
 import ReactDOM from 'react-dom'
-import App from './App'
 class Index extends Component {
   constructor() {
     super(...arguments)
@@ -18,11 +17,14 @@ class Index extends Component {
       <div className="index">
         this is index
         <button onClick={this.handleClick.bind(this)}></button>
-        <App></App>
       </div>
     )
   }
 }
-// ReactDOM.render(<App />, document.getElementById('root'))
-ReactDOM.render(<Index />, document.getElementById('root'))
-ReactDOM.render('22222222', document.getElementById('root1'))
+function Index1() {
+  return (<div>this is Index1</div>)
+}
+
+
+// ReactDOM.render(<Index></Index>, document.getElementById('root'))
+ReactDOM.render(<Index1></Index1>, document.getElementById('root1'))
