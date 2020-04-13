@@ -9,13 +9,16 @@ class Index extends Component {
   }
   handleClick() {
     this.setState({
-      data: 3
+      data: 1
+    })
+    this.setState({
+      data:10
     })
   }
   render() {
     return (
       <div className="index">
-        this is index
+        this is index,{this.state.data}
         <button onClick={this.handleClick.bind(this)}></button>
       </div>
     )
@@ -26,5 +29,5 @@ function Index1() {
 }
 
 
-// ReactDOM.render(<Index></Index>, document.getElementById('root'))
-ReactDOM.render(<Index1></Index1>, document.getElementById('root1'))
+ReactDOM.render(<Index></Index>, document.getElementById('root'))
+// ReactDOM.render(<Index1></Index1>, document.getElementById('root1'))

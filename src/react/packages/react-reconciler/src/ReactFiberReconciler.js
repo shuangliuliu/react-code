@@ -111,7 +111,6 @@ function getContextForSubtree(
 
   return parentContext;
 }
-
 function scheduleRootUpdate(
   current: Fiber,
   element: ReactNodeList,
@@ -280,6 +279,13 @@ export function createContainer(
 ): OpaqueRoot {
   return createFiberRoot(containerInfo, isConcurrent, hydrate);
 }
+
+/* 
+  过期时间种类
+  1、Sync模式
+  2、异步模式
+  3、指定context
+ */
 
 export function updateContainer(
   element: ReactNodeList,

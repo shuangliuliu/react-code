@@ -19,6 +19,9 @@ const UNIT_SIZE = 10;
 const MAGIC_NUMBER_OFFSET = MAX_SIGNED_31_BIT_INT - 1;
 
 // 1 unit of expiration time represents 10ms.
+/* 
+  目的是让时间间隔10ms以内的时间得到同一个当前时间
+*/
 export function msToExpirationTime(ms: number): ExpirationTime {
   // Always add an offset so that we don't clash with the magic number for NoWork.
   return MAGIC_NUMBER_OFFSET - ((ms / UNIT_SIZE) | 0);
@@ -27,7 +30,9 @@ export function msToExpirationTime(ms: number): ExpirationTime {
 export function expirationTimeToMs(expirationTime: ExpirationTime): number {
   return (MAGIC_NUMBER_OFFSET - expirationTime) * UNIT_SIZE;
 }
-
+/* 
+让num相差在precision的数字得到同样的数字，当前时间相差在precision的时间得到同样的过期时间
+*/
 function ceiling(num: number, precision: number): number {
   return (((num / precision) | 0) + 1) * precision;
 }
@@ -40,7 +45,7 @@ function computeExpirationBucket(
   return (
     MAGIC_NUMBER_OFFSET -
     ceiling(
-      MAGIC_NUMBER_OFFSET - currentTime + expirationInMs / UNIT_SIZE,
+      MAGIC_NUMBER_OFFSET - currentTime + expirationInMs / UNIT_SIZE,  //expirationInMs代表的是expirationInMs / UNIT_SIZE之后才过期
       bucketSizeMs / UNIT_SIZE,
     )
   );
@@ -51,7 +56,7 @@ export const LOW_PRIORITY_BATCH_SIZE = 250;
 
 /*
 返回低优先级的expirationTime时间,
-低优先的两个更新操作的时间间隔25ms时，会得到同一个过期时间，这样可以做到批量合并update，做到批量更新 */
+低优先级的两个更新操作的时间间隔25ms时，会得到同一个过期时间，这样可以做到批量合并setstate，做到批量更新 */
 export function computeAsyncExpiration(
   currentTime: ExpirationTime,
 ): ExpirationTime {

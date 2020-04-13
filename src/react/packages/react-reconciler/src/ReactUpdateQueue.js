@@ -229,8 +229,7 @@ function appendUpdateToQueue<State>(
 export function enqueueUpdate<State>(fiber: Fiber, update: Update<State>) {
   // Update queues are created lazily.
   /*
-    alternate是当前fiber对象更新之前的fiber对象，
-    每次更新之后会将新的fiber对象赋值给alternate，下次更新的时候直接从alternate中获取旧的fiber对象进行更新
+    alternate是 current  <<=>>  workinprogress 的对应关系
   */
   const alternate = fiber.alternate;
   let queue1;
@@ -279,6 +278,7 @@ export function enqueueUpdate<State>(fiber: Fiber, update: Update<State>) {
     // There are two queues. We need to append the update to both queues,
     // while accounting for the persistent structure of the list — we don't
     // want the same update to be added multiple times.
+    //疑问：为什么需要判断一下queue1和queue2的lastupdate
     if (queue1.lastUpdate === null || queue2.lastUpdate === null) {
       // One of the queues is not empty. We must add the update to both queues.
       appendUpdateToQueue(queue1, update);

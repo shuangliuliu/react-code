@@ -685,8 +685,8 @@ const ReactDOM: Object = {
 
   /*
     React创建更新的三种方式
-    1、React.DOM.render，初次渲染
-    2、setState或forceState
+    1、React.DOM.render，初次渲染，是在root节点创建的更新
+    2、setState或forceState，是给节点的fiber创建更新
     3、replaceState已经废弃掉
   */
 
