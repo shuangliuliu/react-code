@@ -111,6 +111,9 @@ function getContextForSubtree(
 
   return parentContext;
 }
+/*
+  current：指的是当前的fiber对象
+*/
 function scheduleRootUpdate(
   current: Fiber,
   element: ReactNodeList,
@@ -134,14 +137,13 @@ function scheduleRootUpdate(
       );
     }
   }
-  // 1、创建更新
+  // 1、根据过期时间创建更新
   const update = createUpdate(expirationTime);
   // Caution: React DevTools currently depends on this property
   // being called "element".
   // 修改更新内容，比如是ReactDOM.render的第一个参数，setstate的第一个参数
   // 2、修改更新内容
   update.payload = { element };
-
   callback = callback === undefined ? null : callback;
   if (callback !== null) {
     warningWithoutStack(
@@ -153,7 +155,7 @@ function scheduleRootUpdate(
     update.callback = callback;
   }
   flushPassiveEffects();
-  // 3、将更新加入到更新队列中,传入当前fiber对象和update
+  // 3、将当前fiber对象产生的更新加入到当前fiber对象的更新队列中,传入当前fiber对象和update
   enqueueUpdate(current, update);
   scheduleWork(current, expirationTime);
   return expirationTime;
@@ -280,7 +282,7 @@ export function createContainer(
   return createFiberRoot(containerInfo, isConcurrent, hydrate);
 }
 
-/* 
+/*
   过期时间种类
   1、Sync模式
   2、异步模式
@@ -294,6 +296,7 @@ export function updateContainer(
   callback: ?Function,
 ): ExpirationTime {
   const current = container.current;
+  // 获取当前时间
   const currentTime = requestCurrentTime();
   // 计算过期时间
   const expirationTime = computeExpirationForFiber(currentTime, current);

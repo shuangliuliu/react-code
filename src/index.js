@@ -7,25 +7,37 @@ class Index extends Component {
       data: 1
     }
   }
+  render() {
+    return (
+      <div className="index">
+        <Index1 />
+      </div>
+    )
+  }
+}
+class Index1 extends Component {
+  constructor() {
+    super(...arguments)
+    this.state = {
+      data: 1
+    }
+  }
   handleClick() {
     this.setState({
-      data: 1
+      data: 100
+    }, function () {
+      // console.log('ssssssss', this.state.data)
     })
-    this.setState({
-      data:10
-    })
+    // console.log('dddd', this.state.data)
   }
   render() {
     return (
       <div className="index">
         this is index,{this.state.data}
-        <button onClick={this.handleClick.bind(this)}></button>
+        <button onClick={this.handleClick.bind(this)}>异步操作</button>
       </div>
     )
   }
-}
-function Index1() {
-  return (<div>this is Index1</div>)
 }
 
 
