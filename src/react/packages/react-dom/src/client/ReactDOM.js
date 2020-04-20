@@ -493,16 +493,17 @@ setBatchingImplementation(
 
 let warnedAboutHydrateAPI = false;
 
-/*  判断是否应该复用已有的dom节点，forceHydrate(强制要求复用) || shouldHydrateDueToLegacyHeuristic(根据容器是否有复用的元素)
-    如果不复用，删除容器中已有的节点
-    创建ReactRoot
+/*
+  判断是否应该复用已有的dom节点，forceHydrate(强制要求复用) || shouldHydrateDueToLegacyHeuristic(根据容器是否有复用的元素)
+  如果不复用，删除容器中已有的节点
+  创建ReactRoot
  */
 function legacyCreateRootFromDOMContainer(
   container: DOMContainer,
   forceHydrate: boolean,
 ): Root {
   const shouldHydrate =
-    forceHydrate || shouldHydrateDueToLegacyHeuristic(container);
+    forceHydrate || shouldHydrateDueToLegacyHeuristic(container); //为了兼容老版本的服务端渲染
   // First clear any existing content.
   if (!shouldHydrate) {
     let warned = false;
@@ -685,7 +686,7 @@ const ReactDOM: Object = {
 
   /*
     React创建更新的三种方式
-    1、React.DOM.render，初次渲染，是在root节点创建的更新
+    1、ReactDOM.render / ReactDOM.hydrate，初次渲染，是在root节点创建的更新
     2、setState或forceState，是给节点的fiber创建更新
     3、replaceState已经废弃掉
   */
@@ -695,6 +696,7 @@ const ReactDOM: Object = {
     1、创建ReactRoot
     2、创建FiberRoot和RootFiber
     3、创建更新
+    4、进入更新调度
   */
   /*
     在调用render方法之前会先调用React.createElement，创建一个ReactElement，type属性是classComponent
