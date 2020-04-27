@@ -137,7 +137,7 @@ function scheduleRootUpdate(
       );
     }
   }
-  // 1、根据过期时间创建更新
+  // 1、根据过期时间创建更新，update是用来标记react应用中应用需要更新的地点
   const update = createUpdate(expirationTime);
   // Caution: React DevTools currently depends on this property
   // being called "element".
@@ -157,6 +157,7 @@ function scheduleRootUpdate(
   flushPassiveEffects();
   // 3、将当前fiber对象产生的更新加入到当前fiber对象的更新队列中,传入当前fiber对象和update
   enqueueUpdate(current, update);
+  // 4、开始进行任务调度
   scheduleWork(current, expirationTime);
   return expirationTime;
 }
@@ -285,7 +286,7 @@ export function createContainer(
 /*
   过期时间种类
   1、Sync模式
-  2、异步模式
+  2、异步模式，两种情况500ms和15ms
   3、指定context
  */
 

@@ -216,6 +216,12 @@ if (__DEV__) {
   debugCounter = 1;
 }
 
+/*
+  Fiber
+  1、每个ReactElement对应一个fiber对象
+  2、记录节点的各种状态，比如classComponent的state和prop
+  3、串联整个应用树形结构
+*/
 function FiberNode(
   tag: WorkTag,
   pendingProps: mixed,
@@ -223,11 +229,18 @@ function FiberNode(
   mode: TypeOfMode,
 ) {
   // Instance
+  /*
+    记录的是不同的组件类型：原生dom节点、funComponent、classComponent、react提供的组件
+   */
   this.tag = tag;
   this.key = key;
   // ReactElement.type,调用createElement的第一个参数，值为原生的dom节点、classComponent、functionComponent
   this.elementType = null;
   this.type = null;
+  /*
+    节点对应的实例，比如classComponent的实例，原生dom节点的实例，funComponent没有实例，为null，
+    在更新完fiber节点之后可以把state和props放在该实例上
+    */
   this.stateNode = null;
 
   // Fiber
@@ -240,15 +253,29 @@ function FiberNode(
   this.index = 0;
 
   this.ref = null;
-
+  /*
+    新的props
+  */
   this.pendingProps = pendingProps;
+  /*
+    旧的props
+  */
   this.memoizedProps = null;
-  // 该fiber对象产生的update会放在此队列中
+  /*
+    该fiber对象产生的update会放在此队列中
+    1、update
+      1.1 用于记录组件状态的改变
+      1.2 存放于updateQueue
+      1.3 多个update同时存在
+  */
   this.updateQueue = null;
   // 该fiber对象上一次渲染的state
   this.memoizedState = null;
   this.contextDependencies = null;
-
+  /*
+    比如concurrentMode和strictMode，如果当前的fiber对象是concurrentMode或strictMode，
+    当前的fiber的mode会继承父节点的mode类型
+  */
   this.mode = mode;
 
   // Effects
@@ -260,7 +287,12 @@ function FiberNode(
 
   this.expirationTime = NoWork;
   this.childExpirationTime = NoWork;
-
+  /*
+    current <==>workInProgress
+    每次更新过程中，根据当前的fiber对象创建workInProgress对象，current指当前的对象，workInProgress指要更新的对象，
+    更新完成之后workInProgress对象会更新成最新的，节点渲染到dom上之后，workInProgress对象会变成current，
+    下次更新会把current复制到workInProgress上，实现对象的复用
+  */
   this.alternate = null;
 
   if (enableProfilerTimer) {

@@ -375,13 +375,14 @@ if (__DEV__ && replayFailedUnitOfWorkWithInvokeGuardedCallback) {
 
 // 重置操作，重置nextRoot
 function resetStack() {
-  // nextUnitOfWork我们之前正在更新的fiber节点
+  // nextUnitOfWork我们遍历整棵子树的时候，执行到了哪个节点的更新，之前正在更新的fiber节点的下一个更新的节点
   if (nextUnitOfWork !== null) {   //之前正在更新的是一个异步任务因为时间片用完了被打断了
     let interruptedWork = nextUnitOfWork.return;
     /*
-    之前正在更新的fiber节点的所有父节点的更新进行回退，
-    当前更新的节点可能也会对之前正在正在更新的fiber对象的父节点进行更新，
-    可能拿到的state不是更新的最新的state，会导致更新混乱，所以回退，重新更新unwindInterruptedWork
+      之前正在更新的fiber节点的所有父节点的更新进行回退，
+      当前更新的节点可能也会对之前正在正在更新的fiber对象的父节点进行更新，
+      可能拿到的state不是更新的最新的state，会导致更新混乱，所以回退，重新更新unwindInterruptedWork
+      问题：
     */
     while (interruptedWork !== null) {
       unwindInterruptedWork(interruptedWork);
@@ -1635,10 +1636,12 @@ function computeExpirationForFiber(currentTime: ExpirationTime, fiber: Fiber) {
         expirationTime = Sync;
         break;
       case UserBlockingPriority:
+        // 高优先级
         expirationTime = computeInteractiveExpiration(currentTime);
         break;
       case NormalPriority:
         // This is a normal, concurrent update
+        // 低优先级
         expirationTime = computeAsyncExpiration(currentTime);
         break;
       case LowPriority:
@@ -1766,7 +1769,9 @@ function retryTimedOutBoundary(boundaryFiber: Fiber, thenable: Thenable) {
     }
   }
 }
-// 该函数主要用于处理过期时间
+/*
+  从当前节点开始向上遍历，更新节点的过期时间
+*/
 function scheduleWorkToRoot(fiber: Fiber, expirationTime): FiberRoot | null {
   recordScheduleUpdate();
   if (__DEV__) {
@@ -1777,10 +1782,6 @@ function scheduleWorkToRoot(fiber: Fiber, expirationTime): FiberRoot | null {
   }
   // Update the source fiber's expiration time
   // 初始化RootFiber对象时，设置的expirationtime为0
-  /*
-  expirationTime值越大，优先级越高，和视频里边是反的，
-  如果当前的fiber对象产生过更新还么有完成（如果完成，expirationtime会去掉），并且这次的更新的优先级高于之前的更新
-  */
 
   if (fiber.expirationTime < expirationTime) {
     fiber.expirationTime = expirationTime;
@@ -1804,7 +1805,9 @@ function scheduleWorkToRoot(fiber: Fiber, expirationTime): FiberRoot | null {
     while (node !== null) {
       alternate = node.alternate;
       /*
-      childExpirationTime是node的子节点中优先级最高的的expirationTime
+        childExpirationTime是node的子节点中优先级最高的的expirationTime
+        expirationtime是当前fiber节点产生的更新，node是fiber.return,
+        如果当前fiber对象产生的更新是父节点中优先级最高的任务，更新node的childExpirationtime
       */
       if (node.childExpirationTime < expirationTime) {  // 更新node的childExpirationTime
         node.childExpirationTime = expirationTime;
@@ -1899,6 +1902,9 @@ function scheduleWork(fiber: Fiber, expirationTime: ExpirationTime) {
   // stateNode是当前fiber有关的本地状态，dom节点
   // 这个方法修改了fiber对象与其父节点的过期时间,同时返回当前fiber对象所在的FiberRoot
   const root = scheduleWorkToRoot(fiber, expirationTime);
+  /*
+  如果当前fiber对象没有root节点，说明出错，直接return
+  */
   if (root === null) {
     if (__DEV__) {
       switch (fiber.tag) {
@@ -1915,12 +1921,19 @@ function scheduleWork(fiber: Fiber, expirationTime: ExpirationTime) {
     }
     return;
   }
-  // nextRenderExpirationTime是当前正在渲染的任务
+  /*
+    isWorking为true代表正在渲染，有任务正在进行中
+    nextRenderExpirationTime是当前正在渲染的任务
+  */
   if (
-    !isWorking &&    //isWorking代表正在渲染，有任务正在进行中
-    nextRenderExpirationTime !== NoWork && // 当前正在渲染的任务执行到一半被中断
+    !isWorking && //当前没有在工作
+    nextRenderExpirationTime !== NoWork && // 之前正在渲染的任务执行到一半被中断
     expirationTime > nextRenderExpirationTime // 新的任务的优先级高于之前任务的优先级
   ) {
+    /*
+      如果当前没有处于渲染阶段，并且之前渲染的任务执行到一半被中断，并且当前的任务的优先级大于之前任务，
+      新的高优先级任务打断了老的低优先级任务
+     */
 
     // This is an interruption. (Used for performance tracking.)
     interruptedBy = fiber;
@@ -1931,9 +1944,9 @@ function scheduleWork(fiber: Fiber, expirationTime: ExpirationTime) {
   if (
     // If we're in the render phase, we don't need to schedule this root
     // for an update, because we'll do it before we exit...
+
     /*
-    isWorking包含isCommitting
-    is
+      isWorking包含isCommitting和isRender
     */
     !isWorking ||
     isCommitting ||   //不可打断的阶段，把fiber树更新完产生新的state，更新到dom树上，上次的更新结束
@@ -2008,18 +2021,40 @@ function recomputeCurrentRendererTime() {
   currentRendererTime = msToExpirationTime(currentTimeMs);
 }
 
-//该expirationtime不是创建更新的expirationtime，是经过处理得到expirationtime
+/*
+  正式进入异步调度流程
+  传入的是Fiber树的根节点FiberRoot节点
+  该expirationtime不是创建更新的expirationtime，是经过处理得到expirationtime
+*/
 function scheduleCallbackWithExpirationTime(
   root: FiberRoot,
   expirationTime: ExpirationTime,
 ) {
+  /*
+    说明之前已经调用过该方法一次，callbackList已经有一个callback，
+    并且已经有一个callback已经在执行了
+    疑问：从哪里判断已经有一个callback在执行了？
+    解答：执行该方法之后就会进入执行任务的流程，
+          callbackExpirationTime !== NoWork说明之前的任务正在执行
+
+  */
   if (callbackExpirationTime !== NoWork) {
     // A callback is already scheduled. Check its expiration time (timeout).
+    /*
+      当前任务的优先级低于之前正在执行的任务，直接返回
+      （expirationtime越大优先级越高）
+      疑问:直接return，该任务什么时候会执行？
+    */
     if (expirationTime < callbackExpirationTime) {
       // Existing callback has sufficient timeout. Exit.
       return;
     } else {
-      if (callbackID !== null) {
+      /*
+        当前任务优先级高于之前的任务
+        疑问：之前正在执行的任务位于callbackList队列什么位置？开头、结尾、还是中间
+        解答：都有可能
+       */
+      if (callbackID !== null) { // 之前已经有一个任务在执行了，取消之前正在执行的callback
         // Existing callback has insufficient timeout. Cancel and schedule a
         // new one.
         cancelDeferredCallback(callbackID);
@@ -2031,9 +2066,15 @@ function scheduleCallbackWithExpirationTime(
   }
 
   callbackExpirationTime = expirationTime;
+  // 疑惑开始
   const currentMs = now() - originalStartTimeMs;
   const expirationTimeMs = expirationTimeToMs(expirationTime);
   const timeout = expirationTimeMs - currentMs;
+  // 疑惑结束
+  /*
+    重新生成一个新的callback，把新的任务插入到该root节点对应的任务队列中
+    (新的任务队列可能为空哦)
+  */
   callbackID = scheduleDeferredCallback(performAsyncWork, { timeout });
 }
 
@@ -2116,7 +2157,7 @@ function requestCurrentTime() {
   // But the scheduler time can only be updated if there's no pending work, or
   // if we know for certain that we're not in the middle of an event.
   /*
-    如果此时正在渲染，直接返回之前渲染开始计算的当前时间，这样可以保证在渲染过程中加入的任务提前被渲染
+    如果此时正在渲染，直接返回之前渲染开始计算的当前时间，这样可以在该次更新中该任务优先级最高（个人理解）
   */
   if (isRendering) {
     // We're already rendering. Return the most recently read time.
@@ -2150,14 +2191,24 @@ function requestCurrentTime() {
 
 /*
   将FiberRoot加入到root调度队列中
-  判断是否批量更新
+  判断是否是批量更新
   根据expirationtime判断调度类型
+*/
+
+
+/*
+  每一种更新方式都会调用requestWork（ReactDOM.render、setState、forceUpdate）
+  每一次调用requestWork都会调用addRootToSchedule，把root添加到rootSchedule队列中
+  根据过期时间类型进入同步或者异步流程中
 */
 // It's up to the renderer to call renderRoot at some point in the future.
 //该expirationtime不是创建更新的expirationtime，是经过处理得到expirationtime
 function requestWork(root: FiberRoot, expirationTime: ExpirationTime) {
   // 把FiberRoot加入到调度队列中
   addRootToSchedule(root, expirationTime);
+  /*
+  为什么isRendering直接return
+  */
   if (isRendering) {
     // Prevent reentrancy. Remaining work will be scheduled at the end of
     // the currently rendering batch.
@@ -2180,18 +2231,27 @@ function requestWork(root: FiberRoot, expirationTime: ExpirationTime) {
   // 判断是否是同步渲染
   if (expirationTime === Sync) { //同步立即执行
     performSyncWork();
-  } else { //异步进入异步调度
+  } else {
+    //异步进入异步调度
+    /*
+     React Scheduler
+     1、维护时间片
+     2、模拟requestIdleCallback（调用该api会给该api传入一个回调函数，等到浏览器有空的时候，执行回调）
+     3、调度列表和超时判断
+    */
     scheduleCallbackWithExpirationTime(root, expirationTime);
   }
 }
 
-// 把当前的fiberroot放入schedule中
+// 把当前的fiberRoot放入schedule中
 //该expirationtime不是创建更新的expirationtime，是经过处理得到expirationtime
+/*
+  问题：1、同步模式下，ReactDom.render调用过了，调用setstate，root.nextScheduledRoot === null？
+*/
 function addRootToSchedule(root: FiberRoot, expirationTime: ExpirationTime) {
   // Add the root to the schedule.
   // Check if this root is already part of the schedule.
-  // 当前rootfiber未在更新队列中
-  if (root.nextScheduledRoot === null) {
+  if (root.nextScheduledRoot === null) {  // 如果当前root未在更新队列中
     // This root is not already scheduled. Add it.
     root.expirationTime = expirationTime;
     /*
@@ -2569,6 +2629,9 @@ function onUncaughtError(error: mixed) {
 
 // TODO: Batching should be implemented at the renderer level, not inside
 // the reconciler.
+/*
+  requestWork中如果是批量更新，直接return，什么时候会调用该方法实现批量更新
+*/
 function batchedUpdates<A, R>(fn: (a: A) => R, a: A): R {
   const previousIsBatchingUpdates = isBatchingUpdates;
   isBatchingUpdates = true;

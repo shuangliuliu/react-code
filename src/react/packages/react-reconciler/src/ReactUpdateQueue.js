@@ -159,7 +159,10 @@ if (__DEV__) {
 
 export function createUpdateQueue<State>(baseState: State): UpdateQueue<State> {
   const queue: UpdateQueue<State> = {
-    // 每次更新之后的state,应该是state对象
+    /*
+      每次更新，都会根据updateQueue计算出一个新的state，将该state赋值给baseState，
+      等到下次更新，会基于上次的state计算出新的state
+    */
     baseState,
     firstUpdate: null,
     lastUpdate: null,
@@ -197,9 +200,9 @@ function cloneUpdateQueue<State>(
 
 export function createUpdate(expirationTime: ExpirationTime): Update<*> {
   return {
-    //更新的过期时间
+    //这次创建的更新的过期时间
     expirationTime: expirationTime,
-    //更新的类型
+    //更新的类型：updateState、replaceState、forceUpdate、captureUpdate
     tag: UpdateState,
     // 更新内容，比如ReactDOM.render()的第一个参数、setstate的第一个参数
     payload: null,
@@ -226,15 +229,19 @@ function appendUpdateToQueue<State>(
   }
 }
 
+// 该函数保证了fiber和alternate拥有一样的内容，queue1和queue2是不同的对象，但是拥有同样的内容
 export function enqueueUpdate<State>(fiber: Fiber, update: Update<State>) {
   // Update queues are created lazily.
   /*
-    alternate是 current  <<=>>  workinprogress 的对应关系
+    alternate是 current  <<=>>  workinprogress 的对应关系，通俗说alternate是 workinprogress,fiber是current
   */
   const alternate = fiber.alternate;
   let queue1;
   let queue2;
-  // ReactDOM.render初次渲染alternate肯定是空的，当前的fiber对象的updateQueue也是空的，给当前的fiber对象创建一个updateQueue
+  /*
+    alternate是null说明该fiber对象是初次创建更新
+    ReactDOM.render初次渲染alternate肯定是空的，当前的fiber对象的updateQueue也是空的，给当前的fiber对象创建一个updateQueue
+  */
   if (alternate === null) {
     // There's only one fiber.
 
@@ -245,26 +252,26 @@ export function enqueueUpdate<State>(fiber: Fiber, update: Update<State>) {
       // 创建一个updateQueue
       queue1 = fiber.updateQueue = createUpdateQueue(fiber.memoizedState); //memoizedState是上次更新的state
     }
-  } else {
+  } else {  // 保证了queue1和queue2一样
     // There are two owners.
     queue1 = fiber.updateQueue;
     queue2 = alternate.updateQueue;
     if (queue1 === null) {
-      if (queue2 === null) {
+      if (queue2 === null) {  // 都为null说明当前fiber节点没有产生过更新
         // Neither fiber has an update queue. Create new ones.
         queue1 = fiber.updateQueue = createUpdateQueue(fiber.memoizedState);
         queue2 = alternate.updateQueue = createUpdateQueue(
           alternate.memoizedState,
         );
-      } else {
+      } else {  //queue1不存在，queue2不存在
         // Only one fiber has an update queue. Clone to create a new one.
         queue1 = fiber.updateQueue = cloneUpdateQueue(queue2);
       }
     } else {
-      if (queue2 === null) {
+      if (queue2 === null) { // queue1存在，queue2不存在
         // Only one fiber has an update queue. Clone to create a new one.
         queue2 = alternate.updateQueue = cloneUpdateQueue(queue1);
-      } else {
+      } else {   //queue1和queue2都存在
         // Both owners have an update queue.
       }
     }
@@ -274,16 +281,18 @@ export function enqueueUpdate<State>(fiber: Fiber, update: Update<State>) {
     // There's only a single queue.
     // 将update加入到updateQueue中
     appendUpdateToQueue(queue1, update);
-  } else {
+  } else { //queue2存在且queue1和queue2不相等
     // There are two queues. We need to append the update to both queues,
     // while accounting for the persistent structure of the list — we don't
     // want the same update to be added multiple times.
-    //疑问：为什么需要判断一下queue1和queue2的lastupdate
+    /*
+      当前的fiber对象已经产生，只是没有产生过更新
+    */
     if (queue1.lastUpdate === null || queue2.lastUpdate === null) {
       // One of the queues is not empty. We must add the update to both queues.
       appendUpdateToQueue(queue1, update);
       appendUpdateToQueue(queue2, update);
-    } else {
+    } else {    //queue1和queue2都存在update
       // Both queues are non-empty. The last update is the same in both lists,
       // because of structural sharing. So, only append to one of the lists.
       appendUpdateToQueue(queue1, update);

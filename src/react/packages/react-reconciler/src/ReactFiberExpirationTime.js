@@ -19,7 +19,7 @@ const UNIT_SIZE = 10;
 const MAGIC_NUMBER_OFFSET = MAX_SIGNED_31_BIT_INT - 1;
 
 // 1 unit of expiration time represents 10ms.
-/* 
+/*
   目的是让时间间隔10ms以内的时间得到同一个当前时间
 */
 export function msToExpirationTime(ms: number): ExpirationTime {
@@ -30,13 +30,13 @@ export function msToExpirationTime(ms: number): ExpirationTime {
 export function expirationTimeToMs(expirationTime: ExpirationTime): number {
   return (MAGIC_NUMBER_OFFSET - expirationTime) * UNIT_SIZE;
 }
-/* 
-让num相差在precision的数字得到同样的数字，当前时间相差在precision的时间得到同样的过期时间
+/*
+  让num相差在precision的数字得到同样的数字，当前时间相差在precision的时间得到同样的过期时间
 */
 function ceiling(num: number, precision: number): number {
   return (((num / precision) | 0) + 1) * precision;
 }
-// 计算过期时间
+// 计算过期时间，当前时间越大，expirationtime越小，当前时间越小，expirationtime越大
 function computeExpirationBucket(
   currentTime,
   expirationInMs,
@@ -45,6 +45,12 @@ function computeExpirationBucket(
   return (
     MAGIC_NUMBER_OFFSET -
     ceiling(
+      /*
+        之前在计算currenttime时候
+        MAGIC_NUMBER_OFFSET - (date.now() - originalStartTimeMs) = MAGIC_NUMBER_OFFSET - date.now() + originalStartTimeMs,
+        现在就是
+        MAGIC_NUMBER_OFFSET - (MAGIC_NUMBER_OFFSET - date.now() + originalStartTimeMs) = date.now() + originalStartTimeMs
+      */
       MAGIC_NUMBER_OFFSET - currentTime + expirationInMs / UNIT_SIZE,  //expirationInMs代表的是expirationInMs / UNIT_SIZE之后才过期
       bucketSizeMs / UNIT_SIZE,
     )
@@ -81,6 +87,9 @@ export function computeAsyncExpiration(
 export const HIGH_PRIORITY_EXPIRATION = __DEV__ ? 500 : 150;
 export const HIGH_PRIORITY_BATCH_SIZE = 100;
 // 返回高优先级的expirationTime时间,高优先级的过期时间间隔是10ms
+/*
+  当前时间相差在10ms会获得同样的过期时间
+*/
 export function computeInteractiveExpiration(currentTime: ExpirationTime) {
   return computeExpirationBucket(
     currentTime,

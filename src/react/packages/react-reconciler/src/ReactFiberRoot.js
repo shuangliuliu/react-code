@@ -104,7 +104,12 @@ export type FiberRoot = {
   ...BaseFiberRootProperties,
   ...ProfilingOnlyFiberRootProperties,
 };
-
+/*
+  FiberRoot
+  1、整个应用的起点
+  2、包含应用挂载的节点
+  3、记录整个应用更新的各种信息
+*/
 export function createFiberRoot(
   containerInfo: any,
   isConcurrent: boolean,
@@ -132,11 +137,19 @@ export function createFiberRoot(
       didError: false,
 
       pendingCommitExpirationTime: NoWork,
+      /*
+        在一次更新渲染中完成的任务，整个树当中会有各种不同优先级任务，
+        每次更新会渲染优先级最高的任务，渲染完成会被标记在该属性上，更新完了之后会把应用dom上，输出的过成读取的是finishedwork
+      */
       finishedWork: null,
       timeoutHandle: noTimeout,
       context: null,
       pendingContext: null,
       hydrate,
+      /*
+      当前正在更新的任务的过期时间，代表了该次更新渲染的任务，
+      在一次应用更新过程中，会遍历每一个节点，如果某个节点有更新，会有自己的expirationtime，该属性记录的是优先级最高的任务的expirationtime
+      */
       nextExpirationTimeToWorkOn: NoWork,
       expirationTime: NoWork,
       firstBatch: null,
