@@ -1786,8 +1786,10 @@ function scheduleWorkToRoot(fiber: Fiber, expirationTime): FiberRoot | null {
   if (fiber.expirationTime < expirationTime) {
     fiber.expirationTime = expirationTime;
   }
-  // alternate是当前fiber对象之前的fiber对象，初次应该是null
   let alternate = fiber.alternate;
+  /*
+    当前fiber对象没有更新过的话，alternate的值是什么
+  */
   if (alternate !== null && alternate.expirationTime < expirationTime) {
     alternate.expirationTime = expirationTime;
   }

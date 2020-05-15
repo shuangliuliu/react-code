@@ -57,7 +57,7 @@ var hasNativePerformanceNow =
 */
 function ensureHostCallbackIsScheduled() {
   /*
-    如果已经开始执行callback，直接return，代表着已经有一个callbackNode被调用，就是传入performAsyncWork
+    如果已经开始执行callback，直接return，代表着已经有一个callbackNode被调用，就是传入的performAsyncWork
     自动会进入一个调度循环，不需要重新启动一个调度循环
   */
   if (isExecutingCallback) {
@@ -69,6 +69,7 @@ function ensureHostCallbackIsScheduled() {
   /*
     判断HostCallback是否已经开始执行
   */
+  //  isHostCallbackScheduled和isExecutingCallback的区别
   if (!isHostCallbackScheduled) { // 未开始执行
     isHostCallbackScheduled = true; // 开始执行
   } else {  // 已经开始执行
@@ -392,7 +393,7 @@ function unstable_scheduleCallback(callback, deprecated_options) { //callback传
   // Insert the new callback into the list, ordered first by expiration, then
   // by insertion. So the new callback is inserted any other callback with
   // equal expiration.
-  // 单向链表的头部
+  // callbackList单向链表的头部
   if (firstCallbackNode === null) { // 传进来的callback是callbackList的第一个callback
     // This is the first callback in the list.
     // 将callback赋值给firstCallbackNode
@@ -536,6 +537,7 @@ var rAFTimeoutID;
 /*
   callback是animationTick
 */
+// 请求浏览器的下帧时间执行当前任务
 var requestAnimationFrameWithTimeout = function (callback) {
   // schedule rAF and also a setTimeout
   /*
@@ -715,7 +717,7 @@ if (globalValue && globalValue._schedMock) {
    该方法执行的时候已经开始执行一个任务了，
   */
   var animationTick = function (rafTime) {
-    // 之前已经有一个任务执行了
+    // 在requestHostCallback赋值的
     if (scheduledHostCallback !== null) {
       // Eagerly schedule the next animation callback at the beginning of the
       // frame. If the scheduler queue is not empty at the end of the frame, it
@@ -741,10 +743,12 @@ if (globalValue && globalValue._schedMock) {
       frameDeadline = 0
       activeFrameTime = 33
       第一次调用frameDeadline为0
-      第二次调用为frameDeadline = rafTime + activeFrameTime，
+      第二次调用
       nextFrameTime = rafTime - frameDeadline + activeFrameTime
                     = rafTime2 - (rafTime1+activeFrameTime)+activeFrameTime
                     = rafTime2 - rafTime1
+       previousFrameTime = nextFrameTime = rafTime - frameDeadline + activeFrameTime
+                         = rafTime1 - 0 + 33
 
     */
     var nextFrameTime = rafTime - frameDeadline + activeFrameTime;
@@ -770,6 +774,12 @@ if (globalValue && globalValue._schedMock) {
       activeFrameTime =
         nextFrameTime < previousFrameTime ? previousFrameTime : nextFrameTime;
     } else {
+      /*
+         第一次
+         previousFrameTime
+                          = nextFrameTime = rafTime - frameDeadline + activeFrameTime
+                          = rafTime - 0 + 33
+      */
       previousFrameTime = nextFrameTime;
     }
     /*
@@ -792,15 +802,21 @@ if (globalValue && globalValue._schedMock) {
   /*
     callback是flushWork
     absoluteTimeout = startTime + deprecated_options.timeout，(firstCallbackNode.expirationTime)
+                  怎么会小于0？
   */
   requestHostCallback = function (callback, absoluteTimeout) {
     scheduledHostCallback = callback;
     timeoutTime = absoluteTimeout;
     // 如果已经有任务在执行或超时，不用等待requestAnimationFrameWithTimeout的下一帧，进入到事件队列中，立即执行
+    /*
+    疑问：
+    */
     if (isFlushingHostCallback || absoluteTimeout < 0) {
       // Don't wait for the next frame. Continue working ASAP, in a new event.
+      // 在当前帧里直接执行任务，不用等到下一帧
       port.postMessage(undefined);
     } else if (!isAnimationFrameScheduled) {  //还没有进入循环调度的过程
+      // 请求下一帧执行任务
       // If rAF didn't already schedule one, we need to schedule a frame.
       // TODO: If this rAF doesn't materialize because the browser throttles, we
       // might want to still have setTimeout trigger rIC as a backup to ensure
