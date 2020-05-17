@@ -121,6 +121,7 @@ function flushFirstCallback() {
   currentExpirationTime = expirationTime;
   var continuationCallback;
   try {
+    // callback是performAsyncWork
     continuationCallback = callback();
   } finally {
     currentPriorityLevel = previousPriorityLevel;
@@ -129,6 +130,7 @@ function flushFirstCallback() {
 
   // A callback may return a continuation. The continuation should be scheduled
   // with the same priority and expiration as the just-finished callback.
+  // performAsyncWork没返回值，不用看
   if (typeof continuationCallback === 'function') {
     var continuationNode: CallbackNode = {
       callback: continuationCallback,

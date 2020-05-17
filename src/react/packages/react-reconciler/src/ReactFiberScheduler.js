@@ -2363,7 +2363,7 @@ function shouldYieldToRenderer() {
   }
   return false;
 }
-
+// 执行官该方法说明有异步任务过期了强制执行或者异步任务得到了时间片可被中断执行
 function performAsyncWork() {
   try {
     if (!shouldYieldToRenderer()) {
