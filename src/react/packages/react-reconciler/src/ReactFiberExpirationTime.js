@@ -24,14 +24,28 @@ const MAGIC_NUMBER_OFFSET = MAX_SIGNED_31_BIT_INT - 1;
 */
 export function msToExpirationTime(ms: number): ExpirationTime {
   // Always add an offset so that we don't clash with the magic number for NoWork.
+  // ms = now() - originalStartTimeMs
+  // 获取当前时，让当前时间相差在10s之内的获得同一当前时间
   return MAGIC_NUMBER_OFFSET - ((ms / UNIT_SIZE) | 0);
 }
 
 export function expirationTimeToMs(expirationTime: ExpirationTime): number {
+  // 为什么过期时间转成ms，只是乘以10
+  /* 
+  MAGIC_NUMBER_OFFSET - expirationTime
+  = MAGIC_NUMBER_OFFSET - expirationTime
+  = MAGIC_NUMBER_OFFSET - （MAGIC_NUMBER_OFFSET - 
+                            ceiling( date.now() / 10 - originalStartTimeMs / 10 + expirationInMs / UNIT_SIZE) ,
+                            bucketSizeMs / UNIT_SIZE）
+  = ceiling( 
+    date.now() / 10 - originalStartTimeMs / 10 + expirationInMs / UNIT_SIZE),
+    bucketSizeMs / UNIT_SIZE
+  */
   return (MAGIC_NUMBER_OFFSET - expirationTime) * UNIT_SIZE;
 }
 /*
   让num相差在precision的数字得到同样的数字，当前时间相差在precision的时间得到同样的过期时间
+  让当前时间相差在25s或者10s的时间获得同一过期时间
 */
 function ceiling(num: number, precision: number): number {
   return (((num / precision) | 0) + 1) * precision;
@@ -46,11 +60,14 @@ function computeExpirationBucket(
     MAGIC_NUMBER_OFFSET -
     ceiling(
       /*
-        之前在计算currenttime时候
-        MAGIC_NUMBER_OFFSET - (date.now() - originalStartTimeMs) = MAGIC_NUMBER_OFFSET - date.now() + originalStartTimeMs,
-        现在就是
-        MAGIC_NUMBER_OFFSET - (MAGIC_NUMBER_OFFSET - date.now() + originalStartTimeMs) = date.now() + originalStartTimeMs
+        之前currenttime
+                      = MAGIC_NUMBER_OFFSET - (date.now() - originalStartTimeMs) / 10
+                      = MAGIC_NUMBER_OFFSET - date.now() / 10 + originalStartTimeMs / 10,
+        现在就是 MAGIC_NUMBER_OFFSET - currentTime
+              = MAGIC_NUMBER_OFFSET - (MAGIC_NUMBER_OFFSET - date.now() /10 + originalStartTimeMs / 10) 
+              = date.now() / 10 - originalStartTimeMs / 10 + expirationInMs / UNIT_SIZE
       */
+      // 让当前时间相差在25s或者10s以内的获得同一过期时间  
       MAGIC_NUMBER_OFFSET - currentTime + expirationInMs / UNIT_SIZE,  //expirationInMs代表的是expirationInMs / UNIT_SIZE之后才过期
       bucketSizeMs / UNIT_SIZE,
     )

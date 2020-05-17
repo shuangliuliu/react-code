@@ -55,9 +55,10 @@ var hasNativePerformanceNow =
   expirationTime = startTime + deprecated_options.timeout
   调用该方法时开始执行任务
 */
+//  isExecutingCallback和isHostCallbackScheduled的区别？
 function ensureHostCallbackIsScheduled() {
   /*
-    如果已经开始执行callback，直接return，代表着已经有一个callbackNode被调用，就是传入的performAsyncWork
+    如果正在执行callback，直接return，代表着已经有一个callbackNode被调用，就是传入的performAsyncWork
     自动会进入一个调度循环，不需要重新启动一个调度循环
   */
   if (isExecutingCallback) {
@@ -75,6 +76,10 @@ function ensureHostCallbackIsScheduled() {
   } else {  // 已经开始执行
     // Cancel the existing host callback.
     // 取消该任务的执行
+    /* 
+      之前scheduleCallbackWithExpirationTime中已经取消callback执行，
+      此时取消执行是取消的什么任务
+    */
     cancelHostCallback();
   }
   /* 执行最新的firstCallback */
@@ -89,6 +94,9 @@ function flushFirstCallback() {
   var next = firstCallbackNode.next;
   if (firstCallbackNode === next) {   // 说明当前任务队列中只有一个任务
     // This is the last callback in the list.
+    /* 
+    执行该方法说明已经在执行一个firstCallback了，执行完之后需要将其置为空
+     */
     firstCallbackNode = null;
     next = null;
   } else {
@@ -206,7 +214,7 @@ function flushWork(didTimeout) {
     return;
   }
   /*
-   当真正开始调用firstCallbackNode的callback时候设置isExecutingCallback
+   当真正开始调用firstCallbackNode的callback时候设置isExecutingCallback为true
   */
   isExecutingCallback = true;
   const previousDidTimeout = currentDidTimeout;
@@ -223,9 +231,9 @@ function flushWork(didTimeout) {
         // earlier than that time. Then read the current time again and repeat.
         // This optimizes for as few performance.now calls as possible.
         var currentTime = getCurrentTime();
-        if (firstCallbackNode.expirationTime <= currentTime) { //第一个任务的expirationtime肯定小于当前时间
+        if (firstCallbackNode.expirationTime <= currentTime) { //第一个任务的expirationtime肯定大于当前时间
           /*
-            该循环会重复执行队列中过期的任务，直到遇到第一个不是过期的任务
+            该循环会重复执行队列中过期的任务，直到遇到第一个不是过期的任务，退出当前循环
           */
           do {
             flushFirstCallback();
@@ -241,6 +249,7 @@ function flushWork(didTimeout) {
     } else {  // 没有任务是过期的
       // Keep flushing callbacks until we run out of time in the frame.
       if (firstCallbackNode !== null) {
+        // 该循环重复执行队列中的任务，直到时间片用完
         do {
           if (enableSchedulerDebugging && isSchedulerPaused) {
             break;
@@ -257,11 +266,13 @@ function flushWork(didTimeout) {
     currentDidTimeout = previousDidTimeout;
     if (firstCallbackNode !== null) {
       // There's still work remaining. Request another callback.
+      // 为什么还要再执行该方法一次？
       ensureHostCallbackIsScheduled();
     } else {
       isHostCallbackScheduled = false;
     }
     // Before exiting, flush all the immediate work that was scheduled.
+    // 不用管
     flushImmediateWork();
   }
 }
@@ -551,7 +562,7 @@ var requestAnimationFrameWithTimeout = function (callback) {
     callback(timestamp);
   });
   /*
-    如果在100ms内localRequestAnimationFrame都没被调用，
+    如果在100ms内localRequestAnimationFrame都没请求到时间，
     那么取消之前的localCancelAnimationFrame，直接执行callback
   */
   rAFTimeoutID = localSetTimeout(function () {
@@ -677,13 +688,14 @@ if (globalValue && globalValue._schedMock) {
     var currentTime = getCurrentTime();
 
     var didTimeout = false;
-    if (frameDeadline - currentTime <= 0) { // 说明在一帧当中浏览器渲染动画用光了整个时间
+    if (frameDeadline - currentTime <= 0) { // 说明在一帧当中浏览器渲染动画用光了整个帧时长
       // There's no time left in this idle period. Check if the callback has
       // a timeout and whether it's been exceeded.
-      if (prevTimeoutTime !== -1 && prevTimeoutTime <= currentTime) { // 任务已经过期，强制更新
+      // 说明在请求的下一帧中有任务已经过期，强制更新
+      if (prevTimeoutTime !== -1 && prevTimeoutTime <= currentTime) {
         // Exceeded the timeout. Invoke the callback even though there's no
         // time left.
-        didTimeout = true;
+        didTimeout = true; // 设为true说明有任务过期
       } else {
         // No timeout.
         if (!isAnimationFrameScheduled) {
@@ -692,12 +704,13 @@ if (globalValue && globalValue._schedMock) {
           requestAnimationFrameWithTimeout(animationTick);
         }
         // Exit without invoking the callback.
+        // 为什么重新设置回去？
         scheduledHostCallback = prevScheduledCallback;
         timeoutTime = prevTimeoutTime;
         return;
       }
     }
-
+    // 已经有任务过期必须执行
     if (prevScheduledCallback !== null) {
       /*
         正在调用该callback
@@ -717,7 +730,7 @@ if (globalValue && globalValue._schedMock) {
    该方法执行的时候已经开始执行一个任务了，
   */
   var animationTick = function (rafTime) {
-    // 在requestHostCallback赋值的
+    // 在requestHostCallback赋值
     if (scheduledHostCallback !== null) {
       // Eagerly schedule the next animation callback at the beginning of the
       // frame. If the scheduler queue is not empty at the end of the frame, it
@@ -729,7 +742,7 @@ if (globalValue && globalValue._schedMock) {
       // after that.
       /*
         已经请求过一帧了，再次请求下一帧，
-        当前的animationTick只执行一个callback，提前申请一帧
+        当前的animationTick只执行一个callback，在执行该任务的时候提前申请下一帧
       */
       requestAnimationFrameWithTimeout(animationTick);
     } else {
@@ -749,8 +762,10 @@ if (globalValue && globalValue._schedMock) {
                     = rafTime2 - rafTime1
        previousFrameTime = nextFrameTime = rafTime - frameDeadline + activeFrameTime
                          = rafTime1 - 0 + 33
+                         = rafTime1 + 33
 
     */
+    //  下一帧的开始时间
     var nextFrameTime = rafTime - frameDeadline + activeFrameTime;
     /*
       如果当前浏览器的刷新频率高于30帧
@@ -772,7 +787,7 @@ if (globalValue && globalValue._schedMock) {
       // Take the max of the two in case one of them was an anomaly due to
       // missed frame deadlines.
       activeFrameTime =
-        nextFrameTime < previousFrameTime ? previousFrameTime : nextFrameTime;
+        nextFrameTime < previousFrameTime ? previousFrameTime : nextFrameTime; // 始终不理解
     } else {
       /*
          第一次
@@ -801,15 +816,16 @@ if (globalValue && globalValue._schedMock) {
 
   /*
     callback是flushWork
-    absoluteTimeout = startTime + deprecated_options.timeout，(firstCallbackNode.expirationTime)
-                  怎么会小于0？
+    timeoutTime = absoluteTimeout = startTime + timeout
   */
   requestHostCallback = function (callback, absoluteTimeout) {
     scheduledHostCallback = callback;
     timeoutTime = absoluteTimeout;
-    // 如果已经有任务在执行或超时，不用等待requestAnimationFrameWithTimeout的下一帧，进入到事件队列中，立即执行
+    // 如果已经有任务超时，不用等待requestAnimationFrameWithTimeout的下一帧，进入到事件队列中，立即执行
     /*
-    疑问：
+    疑问： absoluteTimeout
+    = firstCallbackNode.expirationTime
+    = startTime + deprecated_options.timeout 怎么会小于0？
     */
     if (isFlushingHostCallback || absoluteTimeout < 0) {
       // Don't wait for the next frame. Continue working ASAP, in a new event.
@@ -823,7 +839,7 @@ if (globalValue && globalValue._schedMock) {
       // that we keep performing work.
       isAnimationFrameScheduled = true;
       /*
-        请求下一帧时间执行当前任务
+        请求下一帧时间执行任务
       */
       requestAnimationFrameWithTimeout(animationTick);
     }

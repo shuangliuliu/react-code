@@ -2033,11 +2033,11 @@ function scheduleCallbackWithExpirationTime(
   expirationTime: ExpirationTime,
 ) {
   /*
-    说明之前已经调用过该方法一次，callbackList已经有一个callback，
-    并且已经有一个callback已经在执行了
+    之前已经调用过该方法一次，callbackList已经有一个callback，
+    并且已经有一个callback已经在执行了，浏览器有了更高优先级的任务，之前的任务被中断了
     疑问：从哪里判断已经有一个callback在执行了？
     解答：执行该方法之后就会进入执行任务的流程，
-          callbackExpirationTime !== NoWork说明之前的任务正在执行
+         callbackExpirationTime !== NoWork说明之前的任务正在执行
 
   */
   if (callbackExpirationTime !== NoWork) {
@@ -2056,7 +2056,7 @@ function scheduleCallbackWithExpirationTime(
         疑问：之前正在执行的任务位于callbackList队列什么位置？开头、结尾、还是中间
         解答：都有可能
        */
-      if (callbackID !== null) { // 之前已经有一个任务在执行了，取消之前正在执行的callback
+      if (callbackID !== null) { // 之前已经有一个callback在执行了，取消之前正在执行的callback
         // Existing callback has insufficient timeout. Cancel and schedule a
         // new one.
         cancelDeferredCallback(callbackID);
@@ -2074,7 +2074,8 @@ function scheduleCallbackWithExpirationTime(
   const timeout = expirationTimeMs - currentMs;
   // 疑惑结束
   /*
-    重新生成一个新的callback，把新的任务插入到该root节点对应的任务队列中
+    重新生成一个新的callback，把新的任务插入到该root节点对应的任务队列中，
+    进入执行任务流程
     (新的任务队列可能为空哦)
   */
   callbackID = scheduleDeferredCallback(performAsyncWork, { timeout });
@@ -2209,7 +2210,7 @@ function requestWork(root: FiberRoot, expirationTime: ExpirationTime) {
   // 把FiberRoot加入到调度队列中
   addRootToSchedule(root, expirationTime);
   /*
-  为什么isRendering直接return
+    为什么isRendering直接return？
   */
   if (isRendering) {
     // Prevent reentrancy. Remaining work will be scheduled at the end of
