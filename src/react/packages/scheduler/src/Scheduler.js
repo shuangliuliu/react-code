@@ -51,9 +51,9 @@ var hasNativePerformanceNow =
   typeof performance === 'object' && typeof performance.now === 'function';
 
 /*
-  调用该方法说明callbackList中的firstCallbackNode发生了改变
+  1、调用该方法说明callbackList中的firstCallbackNode发生了改变
   expirationTime = startTime + deprecated_options.timeout
-  调用该方法时开始执行任务
+  2、调用该方法时开始执行任务
 */
 //  isExecutingCallback和isHostCallbackScheduled的区别？
 function ensureHostCallbackIsScheduled() {
@@ -76,7 +76,7 @@ function ensureHostCallbackIsScheduled() {
   } else {  // 已经开始执行
     // Cancel the existing host callback.
     // 取消该任务的执行
-    /* 
+    /*
       之前scheduleCallbackWithExpirationTime中已经取消callback执行，
       此时取消执行是取消的什么任务
     */
@@ -94,7 +94,7 @@ function flushFirstCallback() {
   var next = firstCallbackNode.next;
   if (firstCallbackNode === next) {   // 说明当前任务队列中只有一个任务
     // This is the last callback in the list.
-    /* 
+    /*
     执行该方法说明已经在执行一个firstCallback了，执行完之后需要将其置为空
      */
     firstCallbackNode = null;
@@ -730,6 +730,7 @@ if (globalValue && globalValue._schedMock) {
   };
   /*
    该方法执行的时候已经开始执行一个任务了，
+   （看完浏览器工作原理再看这一部分）
   */
   var animationTick = function (rafTime) {
     // 在requestHostCallback赋值
