@@ -1,0 +1,25 @@
+第二章：
+1、创建更新是什么意思
+2、ReactDOM.render(<Index />, document.getElementById('root'))，传进来的是Index这个类，而不是Index实例？
+3、任务调度是什么
+4、更新渲染
+     4.1 更新fiber => 转换成dom树 => dom树渲染，是一次性完成还是多次完成？
+5、Fiber的alternate，current <==>workInProgress，如何实现对象的复用
+6、update和updateQueue的疑问，代码中
+7、异步更新
+     7.1 更新可打断的指的是哪个过程可被打断，创建更新、更新fiber、fiber转为dom、dom渲染
+8、任务调度
+     8.1 什么时候会任务调度？是在concurrentmode模式下的组件更新会任务调度？还是整体都会任务调度？
+     8.2 任务执行的是什么？
+     8.3 requestIdleCallback说明浏览器执行了浏览器自身优先级较高的任务，已经有空闲的时间执行react了
+     8.4 react的更新流程会更新整个fiber树的每个单元
+     8.5 过期任务和非过期任务都会调用performAsyncWork，过期的任务也会有时间片限制吗？
+     8.6 加入调度队列的是RootFiber节点，更新的开始也是从RootFiber节点，如何更新？
+     8.7 scheduleWorkToRoot问题见源码
+     8.8 resetStack问题见源码
+     8.9 addRootToSchedule问题见源码
+     8.10 requestWork同上
+     8.11 BatchingUpdates
+     8.12 异步调度中断的是什么？在concurrentmode下，是调用一次setstate的更新过程可中断，
+          还是调用多次setstate，多个setstate可不连续执行，可被打断
+     8.13 scheduleCallbackWithExpirationTime问题见源码
