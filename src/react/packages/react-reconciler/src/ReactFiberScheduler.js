@@ -2285,11 +2285,13 @@ function addRootToSchedule(root: FiberRoot, expirationTime: ExpirationTime) {
 function findHighestPriorityRoot() {
   let highestPriorityWork = NoWork;
   let highestPriorityRoot = null;
+  // lastScheduledRoot为null说明没有没有需要更新的root
   if (lastScheduledRoot !== null) {
     let previousScheduledRoot = lastScheduledRoot;
     let root = firstScheduledRoot;
     while (root !== null) {
       const remainingExpirationTime = root.expirationTime;
+      // 该root节点没有需要更新的任务
       if (remainingExpirationTime === NoWork) {
         // This root no longer has work. Remove it from the scheduler.
 
@@ -2301,12 +2303,15 @@ function findHighestPriorityRoot() {
           'Should have a previous and last root. This error is likely ' +
           'caused by a bug in React. Please file an issue.',
         );
+        // root队列中只有一个root
         if (root === root.nextScheduledRoot) {
           // This is the only root in the list.
+          // 将root从队列中移除
           root.nextScheduledRoot = null;
           firstScheduledRoot = lastScheduledRoot = null;
           break;
         } else if (root === firstScheduledRoot) {
+           // 将root从队列中移除
           // This is the first root in the list.
           const next = root.nextScheduledRoot;
           firstScheduledRoot = next;
@@ -2363,9 +2368,12 @@ function shouldYieldToRenderer() {
   }
   return false;
 }
-// 执行官该方法说明有异步任务过期了强制执行或者异步任务得到了时间片可被中断执行
+// 执行该方法说明有异步任务过期了强制执行或者异步任务得到了时间片，但是可被中断执行
 function performAsyncWork() {
   try {
+    /* 
+      shouldYieldToRenderer()为true说明任务可被中断，为false说明任务不可被中断，已经有任务已经过期了，需要立马执行
+     */
     if (!shouldYieldToRenderer()) {
       // The callback timed out. That means at least one update has expired.
       // Iterate through the root schedule. If they contain expired work, set
