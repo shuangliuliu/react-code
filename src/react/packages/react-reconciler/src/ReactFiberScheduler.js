@@ -2034,11 +2034,9 @@ function scheduleCallbackWithExpirationTime(
 ) {
   /*
     之前已经调用过该方法一次，callbackList已经有一个callback，
-    并且已经有一个callback已经在执行了，浏览器有了更高优先级的任务，之前的任务被中断了
+    已经有一个callback已经在执行了，因为时间片的原因中断执行，现在有了一个优先级更高的任务
     疑问：从哪里判断已经有一个callback在执行了？
-    解答：执行该方法之后就会进入执行任务的流程，
-         callbackExpirationTime !== NoWork说明之前的任务正在执行
-
+    解答：callbackExpirationTime !== NoWork说明之前的任务正在执行
   */
   if (callbackExpirationTime !== NoWork) {
     // A callback is already scheduled. Check its expiration time (timeout).
@@ -2046,13 +2044,15 @@ function scheduleCallbackWithExpirationTime(
       当前任务的优先级低于之前正在执行的任务，直接返回
       （expirationtime越大优先级越高）
       疑问:直接return，该任务什么时候会执行？
+      解答：当前任务已经添加到fiber节点上的updateQueue中,在之后fiber节点更新中，该任务会被执行
     */
     if (expirationTime < callbackExpirationTime) {
       // Existing callback has sufficient timeout. Exit.
       return;
     } else {
       /*
-        当前任务优先级高于之前的任务
+        当前任务优先级高于之前的任务,
+        执行该任务
         疑问：之前正在执行的任务位于callbackList队列什么位置？开头、结尾、还是中间
         解答：都有可能
        */
@@ -2258,8 +2258,7 @@ function addRootToSchedule(root: FiberRoot, expirationTime: ExpirationTime) {
     // This root is not already scheduled. Add it.
     root.expirationTime = expirationTime;
     /*
-      当前应用中只有一个root，
-      如果之前更新的任务是一个异步任务，执行一半被打断，现在又有一个更高优先级的任务进来，再次调用
+      当前root不在更新队列中并且更新队列为空
     */
     if (lastScheduledRoot === null) {
       firstScheduledRoot = lastScheduledRoot = root;
@@ -2311,7 +2310,7 @@ function findHighestPriorityRoot() {
           firstScheduledRoot = lastScheduledRoot = null;
           break;
         } else if (root === firstScheduledRoot) {
-           // 将root从队列中移除
+          // 将root从队列中移除
           // This is the first root in the list.
           const next = root.nextScheduledRoot;
           firstScheduledRoot = next;
@@ -2371,7 +2370,7 @@ function shouldYieldToRenderer() {
 // 执行该方法说明有异步任务过期了强制执行或者异步任务得到了时间片，但是可被中断执行
 function performAsyncWork() {
   try {
-    /* 
+    /*
       shouldYieldToRenderer()为true说明任务可被中断，为false说明任务不可被中断，已经有任务已经过期了，需要立马执行
      */
     if (!shouldYieldToRenderer()) {
