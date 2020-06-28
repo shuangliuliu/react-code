@@ -242,7 +242,7 @@ export function didExpireAtExpirationTime(
   currentTime: ExpirationTime,
 ): void {
   const expirationTime = root.expirationTime;
-  // 当前root有需要更新的任务并且任务过期了（当前时间小于过期时间？）
+  // 当前root有需要更新的任务并且任务过期了（当前时间小于过期时间）
   if (expirationTime !== NoWork && currentTime <= expirationTime) {
     // The root has expired. Flush all work up to the current time.
     root.nextExpirationTimeToWorkOn = currentTime;

@@ -1230,6 +1230,9 @@ function workLoop(isYieldy) {
     }
   }
 }
+/* 
+ 调用workLoop进行循环单元更新
+*/
 function renderRoot(root: FiberRoot, isYieldy: boolean): void {
   invariant(
     !isWorking,
@@ -1247,6 +1250,9 @@ function renderRoot(root: FiberRoot, isYieldy: boolean): void {
 
   // Check if we're starting from a fresh stack, or if we're resuming from
   // previously yielded work.
+  /* 
+   之前更新的节点被一个优先级更高的节点打断了
+  */
   if (
     expirationTime !== nextRenderExpirationTime ||
     root !== nextRoot ||
@@ -1427,6 +1433,7 @@ function renderRoot(root: FiberRoot, isYieldy: boolean): void {
     return;
   }
 
+  /* 正常的流程走完之后nextUnitOfWork应该为null，不为null说明发生了错误 */
   if (nextUnitOfWork !== null) {
     // There's still remaining async work in this tree, but we ran out of time
     // in the current frame. Yield back to the renderer. Unless we're
@@ -2284,13 +2291,16 @@ function addRootToSchedule(root: FiberRoot, expirationTime: ExpirationTime) {
 function findHighestPriorityRoot() {
   let highestPriorityWork = NoWork;
   let highestPriorityRoot = null;
-  // lastScheduledRoot为null说明没有没有需要更新的root
+  // lastScheduledRoot为null说明没有需要更新的root
   if (lastScheduledRoot !== null) {
     let previousScheduledRoot = lastScheduledRoot;
     let root = firstScheduledRoot;
     while (root !== null) {
       const remainingExpirationTime = root.expirationTime;
-      // 该root节点没有需要更新的任务
+      /* 
+        每次更新都是从root节点开始更新，remainingExpirationTime = NoWork，
+        说明么有需要更新的任务
+      */
       if (remainingExpirationTime === NoWork) {
         // This root no longer has work. Remove it from the scheduler.
 
@@ -2348,7 +2358,11 @@ function findHighestPriorityRoot() {
       }
     }
   }
-
+  /* 
+    如果当前没有需要更新的root节点，
+    nextFlushedRoot = highestPriorityRoot = NoWork
+    nextFlushedExpirationTime = highestPriorityWork = null
+  */
   nextFlushedRoot = highestPriorityRoot;
   nextFlushedExpirationTime = highestPriorityWork;
 }
@@ -2407,7 +2421,7 @@ function performWork(minExpirationTime: ExpirationTime, isYieldy: boolean) {
   if (isYieldy) {
     recomputeCurrentRendererTime();
     currentSchedulerTime = currentRendererTime;
-
+    // 不用管
     if (enableUserTimingAPI) {
       const didExpire = nextFlushedExpirationTime > currentRendererTime;
       const timeout = expirationTimeToMs(nextFlushedExpirationTime);
@@ -2418,6 +2432,7 @@ function performWork(minExpirationTime: ExpirationTime, isYieldy: boolean) {
       nextFlushedRoot !== null &&
       nextFlushedExpirationTime !== NoWork &&
       minExpirationTime <= nextFlushedExpirationTime &&
+      // 当前的任务不可被中断或者当前时间已经过期
       !(didYield && currentRendererTime > nextFlushedExpirationTime)
     ) {
       performWorkOnRoot(
@@ -2519,6 +2534,7 @@ function performWorkOnRoot(
   isRendering = true;
   // Check if this is async work or sync/expired work.
   // 初次渲染进入该判断
+  // 当前任务不可被中断（sync任务或者过期任务）
   if (!isYieldy) {
     // Flush work without yielding.
     // TODO: Non-yieldy work does not necessarily imply expired work. A renderer
@@ -2566,6 +2582,7 @@ function performWorkOnRoot(
       if (finishedWork !== null) {
         // We've completed the root. Check the if we should yield one more time
         // before committing.
+        // 判断时间片是否已经用完
         if (!shouldYieldToRenderer()) {
           // Still time left. Commit the root.
           completeRoot(root, finishedWork, expirationTime);
