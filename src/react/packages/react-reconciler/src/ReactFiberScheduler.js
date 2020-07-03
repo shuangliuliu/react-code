@@ -375,14 +375,15 @@ if (__DEV__ && replayFailedUnitOfWorkWithInvokeGuardedCallback) {
 
 // 重置操作，重置nextRoot
 function resetStack() {
-  // nextUnitOfWork我们遍历整棵子树的时候，执行到了哪个节点的更新，之前正在更新的fiber节点的下一个更新的节点
+  /*
+    nextUnitOfWork：我们遍历整棵子树的时候，执行到了哪个节点的更新，之前正在更新的fiber节点的下一个更新的节点
+  */
   if (nextUnitOfWork !== null) {   //之前正在更新的是一个异步任务因为时间片用完了被打断了
     let interruptedWork = nextUnitOfWork.return;
     /*
       之前正在更新的fiber节点的所有父节点的更新进行回退，
       当前更新的节点可能也会对之前正在正在更新的fiber对象的父节点进行更新，
       可能拿到的state不是更新的最新的state，会导致更新混乱，所以回退，重新更新unwindInterruptedWork
-      问题：
     */
     while (interruptedWork !== null) {
       unwindInterruptedWork(interruptedWork);
@@ -1230,7 +1231,7 @@ function workLoop(isYieldy) {
     }
   }
 }
-/* 
+/*
  调用workLoop进行循环单元更新
 */
 function renderRoot(root: FiberRoot, isYieldy: boolean): void {
@@ -1250,7 +1251,7 @@ function renderRoot(root: FiberRoot, isYieldy: boolean): void {
 
   // Check if we're starting from a fresh stack, or if we're resuming from
   // previously yielded work.
-  /* 
+  /*
    之前更新的节点被一个优先级更高的节点打断了
   */
   if (
@@ -1796,6 +1797,7 @@ function scheduleWorkToRoot(fiber: Fiber, expirationTime): FiberRoot | null {
   let alternate = fiber.alternate;
   /*
     当前fiber对象没有更新过的话，alternate的值是什么
+    没看懂
   */
   if (alternate !== null && alternate.expirationTime < expirationTime) {
     alternate.expirationTime = expirationTime;
@@ -1804,13 +1806,15 @@ function scheduleWorkToRoot(fiber: Fiber, expirationTime): FiberRoot | null {
   // return是当前元素的父节点
   let node = fiber.return;
   let root = null;
-  /*  tag为更新的类型
+  /*
+    tag为更新的类型
     如果当前对象是RootFiber对象
   */
   if (node === null && fiber.tag === HostRoot) {
     // stateNode指的是FiberRoot
     root = fiber.stateNode;
   } else {
+    // 很重要
     while (node !== null) {
       alternate = node.alternate;
       /*
@@ -1956,6 +1960,7 @@ function scheduleWork(fiber: Fiber, expirationTime: ExpirationTime) {
 
     /*
       isWorking包含isCommitting和isRender
+      没看懂
     */
     !isWorking ||
     isCommitting ||   //不可打断的阶段，把fiber树更新完产生新的state，更新到dom树上，上次的更新结束
@@ -2042,6 +2047,8 @@ function scheduleCallbackWithExpirationTime(
   /*
     之前已经调用过该方法一次，callbackList已经有一个callback，
     已经有一个callback已经在执行了，因为时间片的原因中断执行，现在有了一个优先级更高的任务
+  */
+  /*
     疑问：从哪里判断已经有一个callback在执行了？
     解答：callbackExpirationTime !== NoWork说明之前的任务正在执行
   */
@@ -2063,7 +2070,11 @@ function scheduleCallbackWithExpirationTime(
         疑问：之前正在执行的任务位于callbackList队列什么位置？开头、结尾、还是中间
         解答：都有可能
        */
-      if (callbackID !== null) { // 之前已经有一个callback在执行了，取消之前正在执行的callback
+      /*
+        之前已经有一个callback在执行了，取消之前正在执行的callback
+        在此之前已经将该节点的所有父节点的更新回退了
+      */
+      if (callbackID !== null) {
         // Existing callback has insufficient timeout. Cancel and schedule a
         // new one.
         cancelDeferredCallback(callbackID);
@@ -2272,8 +2283,7 @@ function addRootToSchedule(root: FiberRoot, expirationTime: ExpirationTime) {
       root.nextScheduledRoot = root;
     } else {
       /*
-        之前正在更新的rootfiber更新到一半，来了优先级更高的任务，
-        将当前任务对应的rootfiber加入到lastScheduledRoot
+        将当前任务对应的FiberRoot添加到队列尾部
       */
       lastScheduledRoot.nextScheduledRoot = root;
       lastScheduledRoot = root;
@@ -2297,9 +2307,9 @@ function findHighestPriorityRoot() {
     let root = firstScheduledRoot;
     while (root !== null) {
       const remainingExpirationTime = root.expirationTime;
-      /* 
-        每次更新都是从root节点开始更新，remainingExpirationTime = NoWork，
-        说明么有需要更新的任务
+      /*
+        每次更新都是从root节点开始更新，
+        remainingExpirationTime = NoWork，说明么有需要更新的任务
       */
       if (remainingExpirationTime === NoWork) {
         // This root no longer has work. Remove it from the scheduler.
@@ -2338,7 +2348,9 @@ function findHighestPriorityRoot() {
         }
         root = previousScheduledRoot.nextScheduledRoot;
       } else {
-        // 初次渲染进入这里
+        /*
+         当前的root有需要更新的任务
+        */
         if (remainingExpirationTime > highestPriorityWork) {
           // Update the priority, if it's higher
           highestPriorityWork = remainingExpirationTime;
@@ -2358,7 +2370,7 @@ function findHighestPriorityRoot() {
       }
     }
   }
-  /* 
+  /*
     如果当前没有需要更新的root节点，
     nextFlushedRoot = highestPriorityRoot = NoWork
     nextFlushedExpirationTime = highestPriorityWork = null
@@ -2382,6 +2394,7 @@ function shouldYieldToRenderer() {
   return false;
 }
 // 执行该方法说明有异步任务过期了强制执行或者异步任务得到了时间片，但是可被中断执行
+// 该方法可以将过期的任务执行完、时间片之内可以执行多个节点更新
 function performAsyncWork() {
   try {
     /*
@@ -2432,7 +2445,7 @@ function performWork(minExpirationTime: ExpirationTime, isYieldy: boolean) {
       nextFlushedRoot !== null &&
       nextFlushedExpirationTime !== NoWork &&
       minExpirationTime <= nextFlushedExpirationTime &&
-      // 当前的任务不可被中断或者当前时间已经过期
+      // 有任务已过期或获得了时间片在时间片时间内
       !(didYield && currentRendererTime > nextFlushedExpirationTime)
     ) {
       performWorkOnRoot(
@@ -2541,6 +2554,7 @@ function performWorkOnRoot(
     // may want to perform some work without yielding, but also without
     // requiring the root to complete (by triggering placeholders).
     let finishedWork = root.finishedWork;
+    /* 上一个任务是一个异步任务未提交，执行当前任务的时候首先将之前任务提交 */
     if (finishedWork !== null) {
       // This root is already complete. We can commit it.
       completeRoot(root, finishedWork, expirationTime);

@@ -52,14 +52,14 @@ var hasNativePerformanceNow =
 
 /*
   1、调用该方法说明callbackList中的firstCallbackNode发生了改变
-  expirationTime = startTime + deprecated_options.timeout
+     expirationTime = startTime + deprecated_options.timeout
   2、调用该方法时开始执行任务
 */
 //  isExecutingCallback和isHostCallbackScheduled的区别？
 function ensureHostCallbackIsScheduled() {
   /*
     如果正在执行callback，直接return，代表着已经有一个callbackNode被调用，就是传入的performAsyncWork
-    自动会进入一个调度循环，不需要重新启动一个调度循环
+    自动会进入一个调度循环，不需要重新启动一个调度循环（怎么自动调度？），之前就已经有一次判断
   */
   if (isExecutingCallback) {
     // Don't schedule work yet; wait until the next time we yield.
@@ -85,7 +85,7 @@ function ensureHostCallbackIsScheduled() {
   /* 执行最新的firstCallback */
   requestHostCallback(flushWork, expirationTime);
 }
-
+// 先把当前的任务从任务队列中删除，之后再执行
 function flushFirstCallback() {
   var flushedNode = firstCallbackNode;
 
@@ -233,7 +233,7 @@ function flushWork(didTimeout) {
         // earlier than that time. Then read the current time again and repeat.
         // This optimizes for as few performance.now calls as possible.
         var currentTime = getCurrentTime();
-        if (firstCallbackNode.expirationTime <= currentTime) { //第一个任务的expirationtime肯定大于当前时间
+        if (firstCallbackNode.expirationTime <= currentTime) { //第一个任务的expirationtime肯定小于当前时间
           /*
             该循环会重复执行队列中过期的任务，直到遇到第一个不是过期的任务，退出当前循环
           */
@@ -361,11 +361,11 @@ function unstable_wrapCallback(callback) {
     1、把callback插入到callbackList链表中
     2、返回callback的callbackId
    调用该方法的时候已经取消了之前正在执行的任务了
+   callback：performAsyncWork
 */
-function unstable_scheduleCallback(callback, deprecated_options) { //callback传入performAsyncWork，
+function unstable_scheduleCallback(callback, deprecated_options) { //callback传入的是performAsyncWork，
   var startTime =
     currentEventStartTime !== -1 ? currentEventStartTime : getCurrentTime(); // 获取当前时间
-
   var expirationTime;
   if (
     typeof deprecated_options === 'object' &&
@@ -406,13 +406,15 @@ function unstable_scheduleCallback(callback, deprecated_options) { //callback传
   // Insert the new callback into the list, ordered first by expiration, then
   // by insertion. So the new callback is inserted any other callback with
   // equal expiration.
-  // callbackList单向链表的头部
-  if (firstCallbackNode === null) { // 传进来的callback是callbackList的第一个callback
+  // firstCallbackNode是callbackList单向链表的头部
+  // 传进来的callback是callbackList的第一个callback，直接赋值给firstCallbackNode
+  if (firstCallbackNode === null) {
     // This is the first callback in the list.
     // 将callback赋值给firstCallbackNode
     firstCallbackNode = newNode.next = newNode.previous = newNode;
     ensureHostCallbackIsScheduled();
   } else {
+    // 将新产生的任务插入到任务队列中
     var next = null;
     var node = firstCallbackNode;
     // 找出当前任务在callbackList中的位置
@@ -441,7 +443,7 @@ function unstable_scheduleCallback(callback, deprecated_options) { //callback传
         如果firstCallbackNode变了就需要调用该方法
         猜测：
           1、每次更新任务都是从callbackList中取第一个任务进行更新
-          （但是之前正在执行的任务可能位于队列的开头、中间、结尾，这不就冲突了吗）
+           （但是之前正在执行的任务可能位于队列的开头、中间、结尾，这不就冲突了吗）
           2、
       */
       ensureHostCallbackIsScheduled();
@@ -729,8 +731,9 @@ if (globalValue && globalValue._schedMock) {
     }
   };
   /*
-   该方法执行的时候已经开始执行一个任务了，
+   该方法执行的时候已经获取一帧时间，开始执行一个任务了，
    （看完浏览器工作原理再看这一部分）
+   scheduledHostCallback = flushwork
   */
   var animationTick = function (rafTime) {
     // 在requestHostCallback赋值
@@ -760,6 +763,7 @@ if (globalValue && globalValue._schedMock) {
       activeFrameTime = 33
       第一次调用frameDeadline为0
       第二次调用
+      frameDeadline = rafTime + activeFrameTime = rafTime + 33
       nextFrameTime = rafTime - frameDeadline + activeFrameTime
                     = rafTime2 - (rafTime1+activeFrameTime)+activeFrameTime
                     = rafTime2 - rafTime1
@@ -805,7 +809,10 @@ if (globalValue && globalValue._schedMock) {
       是一个帧完整的时间33ms，实际不对，因为一帧里边不仅要执行react，还要执行优先级更高的浏览器任务，
       详情看浏览器的任务队列
     */
-
+    /*
+      第一次：frameDeadline = rafTime + activeFrameTime = rafTime + 33
+      第二次：
+    */
     frameDeadline = rafTime + activeFrameTime;
     if (!isMessageEventScheduled) {
       isMessageEventScheduled = true;
@@ -824,7 +831,7 @@ if (globalValue && globalValue._schedMock) {
   requestHostCallback = function (callback, absoluteTimeout) {
     scheduledHostCallback = callback;
     timeoutTime = absoluteTimeout;
-    // 如果已经有任务超时，不用等待requestAnimationFrameWithTimeout的下一帧，进入到事件队列中，立即执行
+    // 如果已经有任务超时，不用等待requestAnimationFrameWithTimeout的下一帧，直接将当前任务加入到事件队列中，立即执行
     /*
     疑问： absoluteTimeout
     = firstCallbackNode.expirationTime
