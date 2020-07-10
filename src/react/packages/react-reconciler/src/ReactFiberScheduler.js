@@ -2309,7 +2309,7 @@ function findHighestPriorityRoot() {
       const remainingExpirationTime = root.expirationTime;
       /*
         每次更新都是从root节点开始更新，
-        remainingExpirationTime = NoWork，说明么有需要更新的任务
+        remainingExpirationTime = NoWork，说明没有需要更新的任务
       */
       if (remainingExpirationTime === NoWork) {
         // This root no longer has work. Remove it from the scheduler.
@@ -2446,6 +2446,7 @@ function performWork(minExpirationTime: ExpirationTime, isYieldy: boolean) {
       nextFlushedExpirationTime !== NoWork &&
       minExpirationTime <= nextFlushedExpirationTime &&
       // 有任务已过期或获得了时间片在时间片时间内
+      // !didYield || currentRendererTime <= nextFlushedExpirationTime
       !(didYield && currentRendererTime > nextFlushedExpirationTime)
     ) {
       performWorkOnRoot(

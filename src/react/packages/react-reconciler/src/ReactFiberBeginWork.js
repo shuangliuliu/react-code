@@ -1889,7 +1889,16 @@ function bailoutOnAlreadyFinishedWork(
     return workInProgress.child;
   }
 }
-
+// 更新节点的入口方法
+/* 
+  判断组件更新是否可以优化
+  根据节点类型分发处理
+  根据expirationTime判断是否可以跳过
+*/
+/* 
+  传进来的是fiber节点
+  renderExpirationTime是FirbeRroot的nextExpirationTimeToWorkOn
+*/
 function beginWork(
   current: Fiber | null,
   workInProgress: Fiber,
