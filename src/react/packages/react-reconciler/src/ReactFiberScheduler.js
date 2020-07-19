@@ -1154,6 +1154,7 @@ function completeUnitOfWork(workInProgress: Fiber): Fiber | null {
 }
 
 // 通过调用beginWork判断是执行新work还是当前work
+// 传进来的是RootFiber的备份workInProgress
 function performUnitOfWork(workInProgress: Fiber): Fiber | null {
   // The current, flushed, state of this fiber is the alternate.
   // Ideally nothing should rely on this, but relying on it here
@@ -1181,7 +1182,7 @@ function performUnitOfWork(workInProgress: Fiber): Fiber | null {
     if (workInProgress.mode & ProfileMode) {
       startProfilerTimer(workInProgress);
     }
-
+// current指向的是RootFiber对象，workInProgress是RootFiber的备份workInProgress
     next = beginWork(current, workInProgress, nextRenderExpirationTime);
     workInProgress.memoizedProps = workInProgress.pendingProps;
 
@@ -1217,7 +1218,7 @@ function performUnitOfWork(workInProgress: Fiber): Fiber | null {
   return next;
 }
 
-function workLoop(isYieldy) {
+function  workLoop(isYieldy) {
   // nextUnitOfWork为FiberNode，我们即将更新的fiber
   if (!isYieldy) {
     // Flush work without yielding
@@ -2445,7 +2446,7 @@ function performWork(minExpirationTime: ExpirationTime, isYieldy: boolean) {
       nextFlushedRoot !== null &&
       nextFlushedExpirationTime !== NoWork &&
       minExpirationTime <= nextFlushedExpirationTime &&
-      // 有任务已过期或获得了时间片在时间片时间内
+      // 有任务已过期或获得了时间片在一帧内
       // !didYield || currentRendererTime <= nextFlushedExpirationTime
       !(didYield && currentRendererTime > nextFlushedExpirationTime)
     ) {
@@ -2533,7 +2534,18 @@ function finishRendering() {
     throw error;
   }
 }
-
+// 调用该方法时候有以下两种情况
+/* 
+  1、同步任务立即更新
+  2、异步任务
+    2.1 有任务过期了
+    2.2 获得了下一帧时间片 
+*/
+/* 
+1、判断当前root是否有未提交的任务
+ 1.1 有，先提交
+ 1.2 执行renderRoot,再提交（异步可中断任务加一层是否还有时间判断）
+*/
 function performWorkOnRoot(
   root: FiberRoot,
   expirationTime: ExpirationTime,
