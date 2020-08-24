@@ -51,15 +51,19 @@ var hasNativePerformanceNow =
   typeof performance === 'object' && typeof performance.now === 'function';
 
 /*
-  1、调用该方法说明callbackList中的firstCallbackNode发生了改变
+  1、调用该方法说明callbackList中的firstCallbackNode发生了改变，执行最新的callback
      expirationTime = startTime + deprecated_options.timeout
   2、调用该方法时开始执行任务
 */
 //  isExecutingCallback和isHostCallbackScheduled的区别？
+
 function ensureHostCallbackIsScheduled() {
   /*
-    如果正在执行callback，直接return，代表着已经有一个callbackNode被调用，就是传入的performAsyncWork
-    自动会进入一个调度循环，不需要重新启动一个调度循环（怎么自动调度？），之前就已经有一次判断
+    如果正在执行callback，直接return，代表着已经有一个callbackNode被调用，就是传入的performAsyncWork，
+    会自动会进入一个调度循环，不需要重新启动一个调度循环（怎么自动调度？），之前就已经有一次判断
+  */
+  /*
+    疑问：之前正在执行的任务不是取消了吗？这是在干嘛
   */
   if (isExecutingCallback) {
     // Don't schedule work yet; wait until the next time we yield.
@@ -70,7 +74,7 @@ function ensureHostCallbackIsScheduled() {
   /*
     判断HostCallback是否已经开始执行
   */
-  //  isHostCallbackScheduled和isExecutingCallback的区别
+  //  isHostCallbackScheduled和isExecutingCallback的区别？
   if (!isHostCallbackScheduled) { // 未开始执行
     isHostCallbackScheduled = true; // 开始执行
   } else {  // 已经开始执行
@@ -412,6 +416,9 @@ function unstable_scheduleCallback(callback, deprecated_options) { //callback传
     // This is the first callback in the list.
     // 将callback赋值给firstCallbackNode
     firstCallbackNode = newNode.next = newNode.previous = newNode;
+    /*
+    疑问：该函数为什么只在当前任务处于任务队列中第一个任务时才调用
+    */
     ensureHostCallbackIsScheduled();
   } else {
     // 将新产生的任务插入到任务队列中
@@ -444,7 +451,6 @@ function unstable_scheduleCallback(callback, deprecated_options) { //callback传
         猜测：
           1、每次更新任务都是从callbackList中取第一个任务进行更新
            （但是之前正在执行的任务可能位于队列的开头、中间、结尾，这不就冲突了吗）
-          2、
       */
       ensureHostCallbackIsScheduled();
     }

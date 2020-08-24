@@ -1182,7 +1182,7 @@ function performUnitOfWork(workInProgress: Fiber): Fiber | null {
     if (workInProgress.mode & ProfileMode) {
       startProfilerTimer(workInProgress);
     }
-// current指向的是RootFiber对象，workInProgress是RootFiber的备份workInProgress
+    // current指向的是RootFiber对象，workInProgress是RootFiber的备份workInProgress
     next = beginWork(current, workInProgress, nextRenderExpirationTime);
     workInProgress.memoizedProps = workInProgress.pendingProps;
 
@@ -1218,15 +1218,16 @@ function performUnitOfWork(workInProgress: Fiber): Fiber | null {
   return next;
 }
 
-function  workLoop(isYieldy) {
+function workLoop(isYieldy) {
   // nextUnitOfWork为FiberNode，我们即将更新的fiber
-  if (!isYieldy) {
+  if (!isYieldy) { //任务不可被中断（同步任务或者异步已过期的任务）
     // Flush work without yielding
     while (nextUnitOfWork !== null) {
       nextUnitOfWork = performUnitOfWork(nextUnitOfWork);
     }
   } else {
     // Flush asynchronous work until there's a higher priority event
+    // 任务可被中断（异步未过期的任务）
     while (nextUnitOfWork !== null && !shouldYieldToRenderer()) {
       nextUnitOfWork = performUnitOfWork(nextUnitOfWork);
     }
@@ -2396,6 +2397,7 @@ function shouldYieldToRenderer() {
 }
 // 执行该方法说明有异步任务过期了强制执行,或者异步任务得到了时间片且可被中断执行
 // 该方法可以将过期的任务执行完、时间片之内可以执行多个节点更新
+// 相当于animationTick的callback，每次浏览器获取时间片之后都会调用该方法
 function performAsyncWork() {
   try {
     /*
@@ -2447,7 +2449,9 @@ function performWork(minExpirationTime: ExpirationTime, isYieldy: boolean) {
       nextFlushedExpirationTime !== NoWork &&
       minExpirationTime <= nextFlushedExpirationTime &&
       // 有任务已过期或获得了时间片在一帧内
-      // !didYield || currentRendererTime <= nextFlushedExpirationTime
+      /*
+        !didYield || currentRendererTime <= nextFlushedExpirationTime
+       */
       !(didYield && currentRendererTime > nextFlushedExpirationTime)
     ) {
       performWorkOnRoot(
@@ -2460,7 +2464,7 @@ function performWork(minExpirationTime: ExpirationTime, isYieldy: boolean) {
       currentSchedulerTime = currentRendererTime;
     }
   } else {
-    // 初次渲染会走入这里
+    // 将所有的同步任务都执行完
     while (
       nextFlushedRoot !== null &&
       nextFlushedExpirationTime !== NoWork &&
@@ -2535,17 +2539,19 @@ function finishRendering() {
   }
 }
 // 调用该方法时候有以下两种情况
-/* 
+/*
   1、同步任务立即更新
   2、异步任务
     2.1 有任务过期了
-    2.2 获得了下一帧时间片 
+    2.2 获得了一帧时间片
 */
-/* 
-1、判断当前root是否有未提交的任务
- 1.1 有，先提交
- 1.2 执行renderRoot,再提交（异步可中断任务加一层是否还有时间判断）
+/*
+  执行当前root所在的任务列表中任务
+  1、判断当前root是否有未提交的任务
+  1.1 有，先提交
+  1.2 执行renderRoot,再提交(commitRoot)（异步可中断任务加一层是否还有时间判断）
 */
+// finishedWork:当前节点所在任务列表中已经完成的任务
 function performWorkOnRoot(
   root: FiberRoot,
   expirationTime: ExpirationTime,
@@ -2571,7 +2577,7 @@ function performWorkOnRoot(
     if (finishedWork !== null) {
       // This root is already complete. We can commit it.
       completeRoot(root, finishedWork, expirationTime);
-    } else {   //初次渲染
+    } else {
       root.finishedWork = null;
       // If this root previously suspended, clear its existing timeout, since
       // we're about to try rendering again.
