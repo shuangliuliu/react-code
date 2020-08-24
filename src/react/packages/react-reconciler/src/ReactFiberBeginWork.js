@@ -609,9 +609,9 @@ function updateFunctionComponent(
       renderExpirationTime,
     );
   }
-
   // React DevTools reads this flag.
   workInProgress.effectTag |= PerformedWork;
+  // nextChildren是reactElement节点，所以需要将reactElement变为fiber对象才能更新
   reconcileChildren(
     current,
     workInProgress,
@@ -1859,7 +1859,7 @@ export function markWorkInProgressReceivedUpdate() {
 }
 
 function bailoutOnAlreadyFinishedWork(
-  current: Fiber | null,
+  current: Fiber | null, 
   workInProgress: Fiber,
   renderExpirationTime: ExpirationTime,
 ): Fiber | null {
@@ -1877,6 +1877,7 @@ function bailoutOnAlreadyFinishedWork(
 
   // Check if the children have any pending work.
   const childExpirationTime = workInProgress.childExpirationTime;
+  // 如果当前节点的优先级最高的子节点不需要更新，这次直接忽略执行
   if (childExpirationTime < renderExpirationTime) {
     // The children don't have any work either. We can skip them.
     // TODO: Once we add back resuming, we should check if the children are
@@ -1899,11 +1900,13 @@ function bailoutOnAlreadyFinishedWork(
   传进来的是fiber节点
   renderExpirationTime是FirbeRroot的nextExpirationTimeToWorkOn
 */
+// current指向的是RootFiber对象，workInProgress是RootFiber的备份workInProgress
 function beginWork(
   current: Fiber | null,
   workInProgress: Fiber,
   renderExpirationTime: ExpirationTime,
 ): Fiber | null {
+  //rootFiber对象产生的更新
   const updateExpirationTime = workInProgress.expirationTime;
 
   if (current !== null) {
@@ -2001,6 +2004,7 @@ function beginWork(
           }
         }
       }
+      // 优化节点更新
       return bailoutOnAlreadyFinishedWork(
         current,
         workInProgress,
@@ -2033,6 +2037,7 @@ function beginWork(
       );
     }
     case FunctionComponent: {
+      // type是reactElement的type属性（div原生组件、functionCom是方法、classCom是一个类）
       const Component = workInProgress.type;
       const unresolvedProps = workInProgress.pendingProps;
       const resolvedProps =
