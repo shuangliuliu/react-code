@@ -2393,7 +2393,7 @@ function shouldYieldToRenderer() {
   }
   return false;
 }
-// 执行该方法说明有异步任务过期了强制执行或者异步任务得到了时间片，但是可被中断执行
+// 执行该方法说明有异步任务过期了强制执行,或者异步任务得到了时间片且可被中断执行
 // 该方法可以将过期的任务执行完、时间片之内可以执行多个节点更新
 function performAsyncWork() {
   try {
