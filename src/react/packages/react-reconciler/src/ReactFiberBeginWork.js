@@ -1859,7 +1859,7 @@ export function markWorkInProgressReceivedUpdate() {
 }
 
 function bailoutOnAlreadyFinishedWork(
-  current: Fiber | null, 
+  current: Fiber | null,
   workInProgress: Fiber,
   renderExpirationTime: ExpirationTime,
 ): Fiber | null {
@@ -1891,12 +1891,12 @@ function bailoutOnAlreadyFinishedWork(
   }
 }
 // 更新节点的入口方法
-/* 
+/*
   判断组件更新是否可以优化
   根据节点类型分发处理
   根据expirationTime判断是否可以跳过
 */
-/* 
+/*
   传进来的是fiber节点
   renderExpirationTime是FirbeRroot的nextExpirationTimeToWorkOn
 */
@@ -1908,6 +1908,11 @@ function beginWork(
 ): Fiber | null {
   //rootFiber对象产生的更新
   const updateExpirationTime = workInProgress.expirationTime;
+  // 首次更新
+  /*
+    current指的是当前页面dom树对应的fiber树，workInProgress指的是这次更新产生对应的fiber树，
+    首次更新有current且current只有RootFiber节点，workInProgress是刚刚创建的
+  */
 
   if (current !== null) {
     // memoizedProps为上次渲染的props
@@ -1917,12 +1922,18 @@ function beginWork(
     if (oldProps !== newProps || hasLegacyContextChanged()) {
       // If props or context changed, mark the fiber as having performed work.
       // This may be unset if the props are determined to be equal later (memo).
+      // 优化过程:
+      /*
+        如果oldProps === newProps && hasLegacyContextChanged() && updateExpirationTime < renderExpirationTime，
+      该节点更新优先级不高，此次更新跳过
+      */
     } else if (updateExpirationTime < renderExpirationTime) {
       didReceiveUpdate = false;
       // This fiber does not have any pending work. Bailout without entering
       // the begin phase. There's still some bookkeeping we that needs to be done
       // in this optimized path, mostly pushing stuff onto the stack.
       switch (workInProgress.tag) {
+        // 代表了当前节点是RootFiber节点产生了更新，只有当ReactDom.render时候该节点才会产生更新
         case HostRoot:
           pushHostRootContext(workInProgress);
           resetHydrationState();
@@ -2012,6 +2023,7 @@ function beginWork(
       );
     }
   } else {
+    // 非首次更新
     didReceiveUpdate = false;
   }
   // Before entering the begin phase, clear the expiration time.

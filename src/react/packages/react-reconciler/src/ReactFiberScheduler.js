@@ -1217,7 +1217,9 @@ function performUnitOfWork(workInProgress: Fiber): Fiber | null {
 
   return next;
 }
-
+/*
+  调用workLoop说明react获得了浏览器的时间片，在该段时间内循环更新fiber节点（循环调用performUnitOfWork）
+ */
 function workLoop(isYieldy) {
   // nextUnitOfWork为FiberNode，我们即将更新的fiber
   if (!isYieldy) { //任务不可被中断（同步任务或者异步已过期的任务）
@@ -1235,6 +1237,7 @@ function workLoop(isYieldy) {
 }
 /*
  调用workLoop进行循环单元更新
+
 */
 function renderRoot(root: FiberRoot, isYieldy: boolean): void {
   invariant(
