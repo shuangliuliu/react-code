@@ -491,7 +491,9 @@ export function createFiberFromTypeAndProps(
   let fiberTag = IndeterminateComponent;
   // The resolved type is set if we know what the final type will be. I.e. it's not lazy.
   let resolvedType = type;
+  // classCom和funCom的type都是function
   if (typeof type === 'function') {
+    /* 如果是classCom的话 */
     if (shouldConstruct(type)) {
       fiberTag = ClassComponent;
     }
@@ -575,7 +577,7 @@ export function createFiberFromTypeAndProps(
       }
     }
   }
-
+  // 创建fiber节点
   fiber = createFiber(fiberTag, pendingProps, key, mode);
   fiber.elementType = type;
   fiber.type = resolvedType;

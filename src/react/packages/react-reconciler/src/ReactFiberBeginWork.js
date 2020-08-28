@@ -147,13 +147,19 @@ if (__DEV__) {
   didWarnAboutFunctionRefs = {};
   didWarnAboutReassigningProps = false;
 }
-
+// 调用该方法说明已经更新完一个节点，现在要更新该节点的props.children，创建一个fiber子树
+/*
+ 1、根据prop.children生成fiber子树
+ 2、判断fiber对象是否可以复用
+ 3、列表根据key优化
+*/
 export function reconcileChildren(
   current: Fiber | null,
   workInProgress: Fiber,
   nextChildren: any,
   renderExpirationTime: ExpirationTime,
 ) {
+  // 首次渲染：只有父节点，在之后的渲染中才会有子节点
   if (current === null) {
     // If this is a fresh new component that hasn't been rendered yet, we
     // won't update its child set by applying minimal side-effects. Instead,
@@ -657,6 +663,7 @@ function updateClassComponent(
   }
   prepareToReadContext(workInProgress, renderExpirationTime);
 
+  // 拿到当前fiber节点的stateNode，首次渲染是不存在的
   const instance = workInProgress.stateNode;
   let shouldUpdate;
   if (instance === null) {
@@ -1923,11 +1930,11 @@ function beginWork(
       // If props or context changed, mark the fiber as having performed work.
       // This may be unset if the props are determined to be equal later (memo).
       // 优化过程:
+    } else if (updateExpirationTime < renderExpirationTime) {
       /*
         如果oldProps === newProps && hasLegacyContextChanged() && updateExpirationTime < renderExpirationTime，
-      该节点更新优先级不高，此次更新跳过
+        该节点更新优先级不高，此次更新跳过
       */
-    } else if (updateExpirationTime < renderExpirationTime) {
       didReceiveUpdate = false;
       // This fiber does not have any pending work. Bailout without entering
       // the begin phase. There's still some bookkeeping we that needs to be done

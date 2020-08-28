@@ -7,13 +7,13 @@
  * @flow
  */
 
-import type {ReactElement} from 'shared/ReactElementType';
-import type {ReactPortal} from 'shared/ReactTypes';
-import type {Fiber} from './ReactFiber';
-import type {ExpirationTime} from './ReactFiberExpirationTime';
+import type { ReactElement } from 'shared/ReactElementType';
+import type { ReactPortal } from 'shared/ReactTypes';
+import type { Fiber } from './ReactFiber';
+import type { ExpirationTime } from './ReactFiberExpirationTime';
 
 import getComponentName from 'shared/getComponentName';
-import {Placement, Deletion} from 'shared/ReactSideEffectTags';
+import { Placement, Deletion } from 'shared/ReactSideEffectTags';
 import {
   getIteratorFn,
   REACT_ELEMENT_TYPE,
@@ -38,19 +38,19 @@ import {
   createFiberFromText,
   createFiberFromPortal,
 } from './ReactFiber';
-import {emptyRefsObject} from './ReactFiberClassComponent';
+import { emptyRefsObject } from './ReactFiberClassComponent';
 import {
   getCurrentFiberStackInDev,
   getStackByFiberInDevAndProd,
 } from './ReactCurrentFiber';
-import {StrictMode} from './ReactTypeOfMode';
+import { StrictMode } from './ReactTypeOfMode';
 
 let didWarnAboutMaps;
 let didWarnAboutGenerators;
 let didWarnAboutStringRefInStrictMode;
 let ownerHasKeyUseWarning;
 let ownerHasFunctionTypeWarning;
-let warnForMissingKey = (child: mixed) => {};
+let warnForMissingKey = (child: mixed) => { };
 
 if (__DEV__) {
   didWarnAboutMaps = false;
@@ -75,7 +75,7 @@ if (__DEV__) {
     invariant(
       typeof child._store === 'object',
       'React Component in warnForMissingKey should have a _store. ' +
-        'This error is likely caused by a bug in React. Please file an issue.',
+      'This error is likely caused by a bug in React. Please file an issue.',
     );
     child._store.validated = true;
 
@@ -92,8 +92,8 @@ if (__DEV__) {
     warning(
       false,
       'Each child in a list should have a unique ' +
-        '"key" prop. See https://fb.me/react-warning-keys for ' +
-        'more information.',
+      '"key" prop. See https://fb.me/react-warning-keys for ' +
+      'more information.',
     );
   };
 }
@@ -118,11 +118,11 @@ function coerceRef(
           warningWithoutStack(
             false,
             'A string ref, "%s", has been found within a strict mode tree. ' +
-              'String refs are a source of potential bugs and should be avoided. ' +
-              'We recommend using createRef() instead.' +
-              '\n%s' +
-              '\n\nLearn more about using refs safely here:' +
-              '\nhttps://fb.me/react-strict-mode-string-ref',
+            'String refs are a source of potential bugs and should be avoided. ' +
+            'We recommend using createRef() instead.' +
+            '\n%s' +
+            '\n\nLearn more about using refs safely here:' +
+            '\nhttps://fb.me/react-strict-mode-string-ref',
             mixedRef,
             getStackByFiberInDevAndProd(returnFiber),
           );
@@ -139,14 +139,14 @@ function coerceRef(
         invariant(
           ownerFiber.tag === ClassComponent,
           'Function components cannot have refs. ' +
-            'Did you mean to use React.forwardRef()?',
+          'Did you mean to use React.forwardRef()?',
         );
         inst = ownerFiber.stateNode;
       }
       invariant(
         inst,
         'Missing owner for string ref %s. This error is likely caused by a ' +
-          'bug in React. Please file an issue.',
+        'bug in React. Please file an issue.',
         mixedRef,
       );
       const stringRef = '' + mixedRef;
@@ -159,7 +159,7 @@ function coerceRef(
       ) {
         return current.ref;
       }
-      const ref = function(value) {
+      const ref = function (value) {
         let refs = inst.refs;
         if (refs === emptyRefsObject) {
           // This is a lazy pooled frozen object, so we need to initialize.
@@ -181,11 +181,11 @@ function coerceRef(
       invariant(
         element._owner,
         'Element ref was specified as a string (%s) but no owner was set. This could happen for one of' +
-          ' the following reasons:\n' +
-          '1. You may be adding a ref to a function component\n' +
-          "2. You may be adding a ref to a component that was not created inside a component's render method\n" +
-          '3. You have multiple copies of React loaded\n' +
-          'See https://fb.me/react-refs-must-have-owner for more information.',
+        ' the following reasons:\n' +
+        '1. You may be adding a ref to a function component\n' +
+        "2. You may be adding a ref to a component that was not created inside a component's render method\n" +
+        '3. You have multiple copies of React loaded\n' +
+        'See https://fb.me/react-refs-must-have-owner for more information.',
         mixedRef,
       );
     }
@@ -228,8 +228,8 @@ function warnOnFunctionType() {
   warning(
     false,
     'Functions are not valid as a React child. This may happen if ' +
-      'you return a Component instead of <Component /> from render. ' +
-      'Or maybe you meant to call this function rather than return it.',
+    'you return a Component instead of <Component /> from render. ' +
+    'Or maybe you meant to call this function rather than return it.',
   );
 }
 
@@ -238,6 +238,7 @@ function warnOnFunctionType() {
 // a compiler or we can do it manually. Helpers that don't need this branching
 // live outside of this function.
 function ChildReconciler(shouldTrackSideEffects) {
+  // 只是修改节点的属性，删除节点放在commit阶段统一执行
   function deleteChild(returnFiber: Fiber, childToDelete: Fiber): void {
     if (!shouldTrackSideEffects) {
       // Noop.
@@ -263,6 +264,7 @@ function ChildReconciler(shouldTrackSideEffects) {
     returnFiber: Fiber,
     currentFirstChild: Fiber | null,
   ): null {
+    // 如果是首次渲染
     if (!shouldTrackSideEffects) {
       // Noop.
       return null;
@@ -716,10 +718,10 @@ function ChildReconciler(shouldTrackSideEffects) {
           warning(
             false,
             'Encountered two children with the same key, `%s`. ' +
-              'Keys should be unique so that components maintain their identity ' +
-              'across updates. Non-unique keys may cause children to be ' +
-              'duplicated and/or omitted — the behavior is unsupported and ' +
-              'could change in a future version.',
+            'Keys should be unique so that components maintain their identity ' +
+            'across updates. Non-unique keys may cause children to be ' +
+            'duplicated and/or omitted — the behavior is unsupported and ' +
+            'could change in a future version.',
             key,
           );
           break;
@@ -784,6 +786,7 @@ function ChildReconciler(shouldTrackSideEffects) {
         newChildren[newIdx],
         expirationTime,
       );
+      // 说明老的fiber节点不能复用
       if (newFiber === null) {
         // TODO: This breaks on empty slots like null children. That's
         // unfortunate because it triggers the slow path all the time. We need
@@ -815,13 +818,13 @@ function ChildReconciler(shouldTrackSideEffects) {
       previousNewFiber = newFiber;
       oldFiber = nextOldFiber;
     }
-
+    // 新数组创建成功
     if (newIdx === newChildren.length) {
       // We've reached the end of the new children. We can delete the rest.
       deleteRemainingChildren(returnFiber, oldFiber);
       return resultingFirstChild;
     }
-
+    // 老的节点创建完成，剩下的新的节点需要创建完成
     if (oldFiber === null) {
       // If we don't have any more existing children we can choose a fast path
       // since the rest will all be insertions.
@@ -902,7 +905,7 @@ function ChildReconciler(shouldTrackSideEffects) {
     invariant(
       typeof iteratorFn === 'function',
       'An object is not an iterable. This error is likely caused by a bug in ' +
-        'React. Please file an issue.',
+      'React. Please file an issue.',
     );
 
     if (__DEV__) {
@@ -916,10 +919,10 @@ function ChildReconciler(shouldTrackSideEffects) {
         warning(
           didWarnAboutGenerators,
           'Using Generators as children is unsupported and will likely yield ' +
-            'unexpected results because enumerating a generator mutates it. ' +
-            'You may convert it to an array with `Array.from()` or the ' +
-            '`[...spread]` operator before rendering. Keep in mind ' +
-            'you might need to polyfill these features for older browsers.',
+          'unexpected results because enumerating a generator mutates it. ' +
+          'You may convert it to an array with `Array.from()` or the ' +
+          '`[...spread]` operator before rendering. Keep in mind ' +
+          'you might need to polyfill these features for older browsers.',
         );
         didWarnAboutGenerators = true;
       }
@@ -929,8 +932,8 @@ function ChildReconciler(shouldTrackSideEffects) {
         warning(
           didWarnAboutMaps,
           'Using Maps as children is unsupported and will likely yield ' +
-            'unexpected results. Convert it to a sequence/iterable of keyed ' +
-            'ReactElements instead.',
+          'unexpected results. Convert it to a sequence/iterable of keyed ' +
+          'ReactElements instead.',
         );
         didWarnAboutMaps = true;
       }
@@ -1105,24 +1108,28 @@ function ChildReconciler(shouldTrackSideEffects) {
     created.return = returnFiber;
     return created;
   }
-
   function reconcileSingleElement(
-    returnFiber: Fiber,
-    currentFirstChild: Fiber | null,
-    element: ReactElement,
-    expirationTime: ExpirationTime,
+    returnFiber: Fiber, // workInProgress
+    currentFirstChild: Fiber | null, // current.child，新的子节点
+    element: ReactElement, // nextChildren，旧的子节点
+    expirationTime: ExpirationTime, // renderExpirationTime
   ): Fiber {
     const key = element.key;
+    // 当前子节点
     let child = currentFirstChild;
+    // 首次渲染是空的，之后可能是有的
+    // 找出可以复用的子节点然后返回
     while (child !== null) {
       // TODO: If key === null and child.key === null, then this only applies to
       // the first item in the list.
+      // 新子节点的key和老的子节点的key相同，可以复用
       if (child.key === key) {
         if (
           child.tag === Fragment
             ? element.type === REACT_FRAGMENT_TYPE
             : child.elementType === element.type
         ) {
+          // 将当前子节点的兄弟元素删除
           deleteRemainingChildren(returnFiber, child.sibling);
           const existing = useFiber(
             child,
@@ -1143,11 +1150,16 @@ function ChildReconciler(shouldTrackSideEffects) {
           break;
         }
       } else {
+        // 将当前节点从节点中删除
         deleteChild(returnFiber, child);
       }
       child = child.sibling;
     }
-
+    // 如果没有可以复用的子节点，创建新的子节点
+    /*
+      1、fragElement
+      2、非fragElement
+    */
     if (element.type === REACT_FRAGMENT_TYPE) {
       const created = createFiberFromFragment(
         element.props.children,
@@ -1216,10 +1228,11 @@ function ChildReconciler(shouldTrackSideEffects) {
   // This API will tag the children with the side-effect of the reconciliation
   // itself. They will be added to the side-effect list as we pass through the
   // children and the parent.
+
   function reconcileChildFibers(
-    returnFiber: Fiber,
-    currentFirstChild: Fiber | null,
-    newChild: any,
+    returnFiber: Fiber, // workInProgress
+    currentFirstChild: Fiber | null, //  current.child
+    newChild: any, // nextChildren
     expirationTime: ExpirationTime,
   ): Fiber | null {
     // This function is not recursive.
@@ -1235,13 +1248,16 @@ function ChildReconciler(shouldTrackSideEffects) {
       newChild !== null &&
       newChild.type === REACT_FRAGMENT_TYPE &&
       newChild.key === null;
+    /*
+      fragment渲染方式，待查看fragment使用方式
+    */
     if (isUnkeyedTopLevelFragment) {
       newChild = newChild.props.children;
     }
 
     // Handle object types
     const isObject = typeof newChild === 'object' && newChild !== null;
-
+    // 对象的渲染方式
     if (isObject) {
       switch (newChild.$$typeof) {
         case REACT_ELEMENT_TYPE:
@@ -1264,7 +1280,7 @@ function ChildReconciler(shouldTrackSideEffects) {
           );
       }
     }
-
+    // 字符串或者数字的渲染方式
     if (typeof newChild === 'string' || typeof newChild === 'number') {
       return placeSingleChild(
         reconcileSingleTextNode(
@@ -1275,7 +1291,7 @@ function ChildReconciler(shouldTrackSideEffects) {
         ),
       );
     }
-
+    // 数组的渲染方式
     if (isArray(newChild)) {
       return reconcileChildrenArray(
         returnFiber,
@@ -1293,7 +1309,7 @@ function ChildReconciler(shouldTrackSideEffects) {
         expirationTime,
       );
     }
-
+    // 如果节点不对
     if (isObject) {
       throwOnInvalidObjectType(returnFiber, newChild);
     }
@@ -1307,6 +1323,7 @@ function ChildReconciler(shouldTrackSideEffects) {
       // If the new child is undefined, and the return fiber is a composite
       // component, throw an error. If Fiber return types are disabled,
       // we already threw above.
+      // 当前子节点的父节点
       switch (returnFiber.tag) {
         case ClassComponent: {
           if (__DEV__) {
@@ -1325,8 +1342,8 @@ function ChildReconciler(shouldTrackSideEffects) {
           invariant(
             false,
             '%s(...): Nothing was returned from render. This usually means a ' +
-              'return statement is missing. Or, to render nothing, ' +
-              'return null.',
+            'return statement is missing. Or, to render nothing, ' +
+            'return null.',
             Component.displayName || Component.name || 'Component',
           );
         }
@@ -1334,6 +1351,7 @@ function ChildReconciler(shouldTrackSideEffects) {
     }
 
     // Remaining cases are all treated as empty.
+    // 新的props是null，删除之前的所有的子节点
     return deleteRemainingChildren(returnFiber, currentFirstChild);
   }
 
