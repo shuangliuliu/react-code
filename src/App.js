@@ -10,6 +10,12 @@ export default class App extends Component {
     this.setState({
       data: 3
     })
+    this.setState({
+      data: 2
+    })
+    this.setState({
+      data: 1
+    })
   }
   render() {
     return (

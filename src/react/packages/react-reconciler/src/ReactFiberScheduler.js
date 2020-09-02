@@ -1783,7 +1783,7 @@ function retryTimedOutBoundary(boundaryFiber: Fiber, thenable: Thenable) {
   }
 }
 /*
-  从当前节点开始向上遍历，更新节点的过期时间
+  从当前节点开始向上遍历，更新current和workInProgress节点的过期时间
 */
 function scheduleWorkToRoot(fiber: Fiber, expirationTime): FiberRoot | null {
   recordScheduleUpdate();
@@ -1815,6 +1815,7 @@ function scheduleWorkToRoot(fiber: Fiber, expirationTime): FiberRoot | null {
     tag为更新的类型
     如果当前对象是RootFiber对象
   */
+  // 如果是首次渲染
   if (node === null && fiber.tag === HostRoot) {
     // stateNode指的是FiberRoot
     root = fiber.stateNode;
@@ -1968,7 +1969,7 @@ function scheduleWork(fiber: Fiber, expirationTime: ExpirationTime) {
       没看懂
     */
     !isWorking ||
-    isCommitting ||   //不可打断的阶段，把fiber树更新完产生新的state，更新到dom树上，上次的更新结束
+    isCommitting ||   //不可打断的阶段，fiber树更新完毕，上次的更新结束
     // ...unless this is a different root than the one we're rendering.
     nextRoot !== root
   ) {
@@ -2057,6 +2058,7 @@ function scheduleCallbackWithExpirationTime(
     疑问：从哪里判断已经有一个callback在执行了？
     解答：callbackExpirationTime !== NoWork说明之前的任务正在执行
   */
+  //疑问： 什么样的任务会被中断？什么叫任务？
   if (callbackExpirationTime !== NoWork) {
     // A callback is already scheduled. Check its expiration time (timeout).
     /*
@@ -2101,6 +2103,7 @@ function scheduleCallbackWithExpirationTime(
     进入执行任务流程
     (新的任务队列可能为空哦)
   */
+
   callbackID = scheduleDeferredCallback(performAsyncWork, { timeout });
 }
 
@@ -2220,8 +2223,6 @@ function requestCurrentTime() {
   判断是否是批量更新
   根据expirationtime判断调度类型
 */
-
-
 /*
   每一种更新方式都会调用requestWork（ReactDOM.render、setState、forceUpdate）
   每一次调用requestWork都会调用addRootToSchedule，把root添加到rootSchedule队列中
@@ -2431,6 +2432,7 @@ function performAsyncWork() {
 function performSyncWork() {
   performWork(Sync, false);
 }
+/* 每次获取时间片之后都会调用performWork，如果第二次时间段内的优先级最高的root不是上一次的root节点，那上次的root节点的更新岂不是会延迟更新 */
 
 function performWork(minExpirationTime: ExpirationTime, isYieldy: boolean) {
   // Keep working on roots until there's no more work, or until there's a higher

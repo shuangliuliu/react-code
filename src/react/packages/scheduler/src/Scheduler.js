@@ -478,14 +478,16 @@ function unstable_continueExecution() {
 function unstable_getFirstCallbackNode() {
   return firstCallbackNode;
 }
-
+// 普通的双向链表删除一个节点操作
 function unstable_cancelCallback(callbackNode) {
   var next = callbackNode.next;
+  /* callbackNode一旦添加到callbackList中，next是有值得，如果为null，说明已经取消
+   */
   if (next === null) {
     // Already cancelled.
     return;
   }
-
+  // 如果回调队列只有一个
   if (next === callbackNode) {
     // This is the only scheduled callback. Clear the list.
     firstCallbackNode = null;

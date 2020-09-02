@@ -114,6 +114,10 @@ function getContextForSubtree(
 /*
   current：指的是当前的fiber对象
 */
+/*
+  current:RootFiber
+  element:<App />
+*/
 function scheduleRootUpdate(
   current: Fiber,
   element: ReactNodeList,
@@ -142,7 +146,10 @@ function scheduleRootUpdate(
   // Caution: React DevTools currently depends on this property
   // being called "element".
   // 修改更新内容，比如是ReactDOM.render的第一个参数，setstate的第一个参数
-  // 2、修改更新内容
+  /*
+    2、修改更新内容
+    element: <App />
+  */
   update.payload = { element };
   callback = callback === undefined ? null : callback;
   if (callback !== null) {
@@ -156,12 +163,17 @@ function scheduleRootUpdate(
   }
   flushPassiveEffects();
   // 3、将当前fiber对象产生的更新加入到当前fiber对象的更新队列中,传入当前fiber对象和update
+  // update中保存了更新的过期时间和需要更新的组件
+  //将更新添加到了当前fiber节点的queue中
   enqueueUpdate(current, update);
   // 4、开始进行任务调度
   scheduleWork(current, expirationTime);
   return expirationTime;
 }
-
+/*
+  element:<App />
+  container:root
+*/
 export function updateContainerAtExpirationTime(
   element: ReactNodeList,
   container: OpaqueRoot, // 此处的container是整个应用的根节点
@@ -190,7 +202,7 @@ export function updateContainerAtExpirationTime(
   } else {
     container.pendingContext = context;
   }
-  // 此时的current是RootFiber对象，element是React.DOM的第一个参数
+  // 此时的current是RootFiber对象，element:<App />
   return scheduleRootUpdate(current, element, expirationTime, callback);
 }
 
@@ -289,7 +301,10 @@ export function createContainer(
   2、异步模式，两种情况500ms和15ms
   3、指定context
  */
-
+/*
+  element:<App />
+  container:root
+*/
 export function updateContainer(
   element: ReactNodeList,
   container: OpaqueRoot,

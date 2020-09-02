@@ -385,6 +385,7 @@ ReactRoot.prototype.render = function (
     work.then(callback);
   }
   // 此处的root是整个应用的FiberRoot
+  // children:<App />
   updateContainer(children, root, null, work._onCommit);
   return work;
 };
@@ -551,10 +552,10 @@ function legacyCreateRootFromDOMContainer(
 */
 
 function legacyRenderSubtreeIntoContainer(
-  parentComponent: ?React$Component<any, any>,
-  children: ReactNodeList,
-  container: DOMContainer,
-  forceHydrate: boolean,
+  parentComponent: ?React$Component<any, any>, // null
+  children: ReactNodeList, //element: <App />
+  container: DOMContainer, // container: document.getElementById('root')
+  forceHydrate: boolean, // false
   callback: ?Function,
 ) {
   if (__DEV__) {
@@ -703,8 +704,8 @@ const ReactDOM: Object = {
     或者functionComponent的话，它们经过实例化之后，可以把实例化结果的dom节点渲染到浏览器上
   */
   render(
-    element: React$Element<any>,
-    container: DOMContainer,
+    element: React$Element<any>, //  <App />
+    container: DOMContainer, //  document.getElementById('root')
     callback: ?Function,
   ) {
     invariant(

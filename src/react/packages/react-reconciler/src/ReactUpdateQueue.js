@@ -230,29 +230,35 @@ function appendUpdateToQueue<State>(
 }
 
 // 该函数保证了fiber和alternate拥有一样的内容，queue1和queue2是不同的对象，但是拥有同样的内容
+/* fiber：需要更新的fiber节点 */
 export function enqueueUpdate<State>(fiber: Fiber, update: Update<State>) {
   // Update queues are created lazily.
   /*
     alternate是 current  <<=>>  workinprogress 的对应关系，通俗说alternate是 workinprogress,fiber是current
   */
+  /*
+  current指的是当前页面dom树对应的fiber树，初次渲染current树只有RootFiber节点
+  */
   const alternate = fiber.alternate;
   let queue1;
   let queue2;
   /*
-    alternate是null说明该fiber对象是初次创建更新
+    alternate是null说明该fiber对象是初次创建
     ReactDOM.render初次渲染alternate肯定是空的，当前的fiber对象的updateQueue也是空的，给当前的fiber对象创建一个updateQueue
   */
+  /* 初次渲染走这里（其实可以理解成当前操作是新创建节点） */
   if (alternate === null) {
     // There's only one fiber.
 
     // ReactDOM.render初次渲染updateQueue是空的
+    /* 疑问：如果是首次渲染的话，queue1肯定是空的，为什么还要加一层判断 */
     queue1 = fiber.updateQueue;
     queue2 = null;
     if (queue1 === null) {
       // 创建一个updateQueue
       queue1 = fiber.updateQueue = createUpdateQueue(fiber.memoizedState); //memoizedState是上次更新的state
     }
-  } else {  // 保证了queue1和queue2一样
+  } else {  // 非首次渲染（当前操作是对已经已经存在的fiber节点）
     // There are two owners.
     queue1 = fiber.updateQueue;
     queue2 = alternate.updateQueue;
@@ -263,12 +269,17 @@ export function enqueueUpdate<State>(fiber: Fiber, update: Update<State>) {
         queue2 = alternate.updateQueue = createUpdateQueue(
           alternate.memoizedState,
         );
-      } else {  //queue1不存在，queue2不存在
+      } else {
+        /*
+          queue1不存在，queue2存在，说明当前页面dom节点对应的fiber节点的没有产生过更新，现在产生了更新，但是还没有更新到dom树上
+        */
         // Only one fiber has an update queue. Clone to create a new one.
+        // queue1和queue2具有相同的内容
         queue1 = fiber.updateQueue = cloneUpdateQueue(queue2);
       }
     } else {
-      if (queue2 === null) { // queue1存在，queue2不存在
+      // queue1存在说明当前页面dom节点对应的fiber节点的产生过更新并且已经更新到dom树上
+      if (queue2 === null) { // queue1存在，queue2不存在，说明此次更新的队列还没有内容
         // Only one fiber has an update queue. Clone to create a new one.
         queue2 = alternate.updateQueue = cloneUpdateQueue(queue1);
       } else {   //queue1和queue2都存在
@@ -277,11 +288,12 @@ export function enqueueUpdate<State>(fiber: Fiber, update: Update<State>) {
     }
   }
   // 初次渲染会进入这里
+  // 疑问： 什么时候会出现queue1 === queue2
   if (queue2 === null || queue1 === queue2) {
     // There's only a single queue.
     // 将update加入到updateQueue中
     appendUpdateToQueue(queue1, update);
-  } else { //queue2存在且queue1和queue2不相等
+  } else { // queue2存在且queue1和queue2不相等(queue1存在)
     // There are two queues. We need to append the update to both queues,
     // while accounting for the persistent structure of the list — we don't
     // want the same update to be added multiple times.
@@ -292,7 +304,7 @@ export function enqueueUpdate<State>(fiber: Fiber, update: Update<State>) {
       // One of the queues is not empty. We must add the update to both queues.
       appendUpdateToQueue(queue1, update);
       appendUpdateToQueue(queue2, update);
-    } else {    //queue1和queue2都存在update
+    } else {   //queue1和queue2都存在update
       // Both queues are non-empty. The last update is the same in both lists,
       // because of structural sharing. So, only append to one of the lists.
       appendUpdateToQueue(queue1, update);

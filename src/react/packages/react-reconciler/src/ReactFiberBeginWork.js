@@ -1915,12 +1915,11 @@ function beginWork(
 ): Fiber | null {
   //rootFiber对象产生的更新
   const updateExpirationTime = workInProgress.expirationTime;
-  // 首次更新
   /*
     current指的是当前页面dom树对应的fiber树，workInProgress指的是这次更新产生对应的fiber树，
-    首次更新有current且current只有RootFiber节点，workInProgress是刚刚创建的
+    首次更新有current树只有RootFiber节点，workInProgress可以重复利用的只有该节点，非首次更新有多个节点可以重复利用
+    该方法实际上是找出可以重复利用的fiber节点，避免重复创建造成内存浪费
   */
-
   if (current !== null) {
     // memoizedProps为上次渲染的props
     const oldProps = current.memoizedProps;
@@ -2030,7 +2029,6 @@ function beginWork(
       );
     }
   } else {
-    // 非首次更新
     didReceiveUpdate = false;
   }
   // Before entering the begin phase, clear the expiration time.
