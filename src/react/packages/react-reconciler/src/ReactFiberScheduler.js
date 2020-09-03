@@ -967,6 +967,7 @@ function resetChildExpirationTime(
   workInProgress.childExpirationTime = newChildExpirationTime;
 }
 
+
 function completeUnitOfWork(workInProgress: Fiber): Fiber | null {
   // Attempt to complete the current unit of work, then move to the
   // next sibling. If there are no more siblings, return to the
@@ -1191,6 +1192,7 @@ function performUnitOfWork(workInProgress: Fiber): Fiber | null {
       stopProfilerTimerIfRunningAndRecordDelta(workInProgress, true);
     }
   } else {
+    // next是一个fiber节点，不是reactElement元素
     next = beginWork(current, workInProgress, nextRenderExpirationTime);
     workInProgress.memoizedProps = workInProgress.pendingProps;
   }
@@ -1208,6 +1210,7 @@ function performUnitOfWork(workInProgress: Fiber): Fiber | null {
   if (__DEV__ && ReactFiberInstrumentation.debugTool) {
     ReactFiberInstrumentation.debugTool.onBeginWork(workInProgress);
   }
+  // next为null说明已经遍历到一个节点的叶子节点了
   if (next === null) {
     // If this doesn't spawn new work, complete the current work.
     next = completeUnitOfWork(workInProgress);
@@ -2635,7 +2638,6 @@ function performWorkOnRoot(
 
   isRendering = false;
 }
-
 function completeRoot(
   root: FiberRoot,
   finishedWork: Fiber,

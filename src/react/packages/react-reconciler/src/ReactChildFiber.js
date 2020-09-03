@@ -259,7 +259,7 @@ function ChildReconciler(shouldTrackSideEffects) {
     childToDelete.nextEffect = null;
     childToDelete.effectTag = Deletion;
   }
-
+  // 将当前节点的所有子节点删除
   function deleteRemainingChildren(
     returnFiber: Fiber,
     currentFirstChild: Fiber | null,
@@ -325,8 +325,10 @@ function ChildReconciler(shouldTrackSideEffects) {
       return lastPlacedIndex;
     }
     const current = newFiber.alternate;
+    // 如果当前新节点复用旧节点
     if (current !== null) {
       const oldIndex = current.index;
+      // 如果当前节点的位置往后移动了
       if (oldIndex < lastPlacedIndex) {
         // This is a move.
         newFiber.effectTag = Placement;
@@ -336,6 +338,7 @@ function ChildReconciler(shouldTrackSideEffects) {
         return oldIndex;
       }
     } else {
+      // 当前节点是一个插入的节点
       // This is an insertion.
       newFiber.effectTag = Placement;
       return lastPlacedIndex;
@@ -357,6 +360,7 @@ function ChildReconciler(shouldTrackSideEffects) {
     textContent: string,
     expirationTime: ExpirationTime,
   ) {
+    // 如果是首次更新或者当前节点之前不是文本节点，根据当前文本内容创建一个fiber节点，添加到父节点
     if (current === null || current.tag !== HostText) {
       // Insert
       const created = createFiberFromText(
@@ -368,6 +372,7 @@ function ChildReconciler(shouldTrackSideEffects) {
       return created;
     } else {
       // Update
+      // 当前节点存在且是文本节点，直接替换内容
       const existing = useFiber(current, textContent, expirationTime);
       existing.return = returnFiber;
       return existing;
@@ -520,6 +525,7 @@ function ChildReconciler(shouldTrackSideEffects) {
     return null;
   }
 
+  // 根据新老节点key判断是否可以复用节点
   function updateSlot(
     returnFiber: Fiber,
     oldFiber: Fiber | null,
@@ -529,7 +535,7 @@ function ChildReconciler(shouldTrackSideEffects) {
     // Update the fiber if the keys match, otherwise return null.
 
     const key = oldFiber !== null ? oldFiber.key : null;
-
+    // 如果数组中当前的节点是一个字符串或者数字
     if (typeof newChild === 'string' || typeof newChild === 'number') {
       // Text nodes don't have keys. If the previous node is implicitly keyed
       // we can continue to replace it without aborting even if it is not a text
@@ -731,7 +737,7 @@ function ChildReconciler(shouldTrackSideEffects) {
     }
     return knownKeys;
   }
-
+  // 还需要再看一遍
   function reconcileChildrenArray(
     returnFiber: Fiber,
     currentFirstChild: Fiber | null,
@@ -773,6 +779,7 @@ function ChildReconciler(shouldTrackSideEffects) {
     let lastPlacedIndex = 0;
     let newIdx = 0;
     let nextOldFiber = null;
+    // 找出新节点列表中第一个不能复用的节点
     for (; oldFiber !== null && newIdx < newChildren.length; newIdx++) {
       if (oldFiber.index > newIdx) {
         nextOldFiber = oldFiber;
@@ -780,13 +787,16 @@ function ChildReconciler(shouldTrackSideEffects) {
       } else {
         nextOldFiber = oldFiber.sibling;
       }
+      // 根据新节点的key和老节点的key是否相同判断是否可以可以复用节点
+      // key相同，复用节点，返回一个fiber节点
+      // key不同，返回null
       const newFiber = updateSlot(
         returnFiber,
         oldFiber,
         newChildren[newIdx],
         expirationTime,
       );
-      // 说明老的fiber节点不能复用
+      // 说明老的fiber节点不能复用，在该节点之前，旧节点是可以复用的
       if (newFiber === null) {
         // TODO: This breaks on empty slots like null children. That's
         // unfortunate because it triggers the slow path all the time. We need
@@ -797,7 +807,9 @@ function ChildReconciler(shouldTrackSideEffects) {
         }
         break;
       }
+      // 如果是首次创建
       if (shouldTrackSideEffects) {
+        // 如果旧节点存在但是没有复用旧节点
         if (oldFiber && newFiber.alternate === null) {
           // We matched the slot, but we didn't reuse the existing fiber, so we
           // need to delete the existing child.
@@ -818,13 +830,13 @@ function ChildReconciler(shouldTrackSideEffects) {
       previousNewFiber = newFiber;
       oldFiber = nextOldFiber;
     }
-    // 新数组创建成功
     if (newIdx === newChildren.length) {
       // We've reached the end of the new children. We can delete the rest.
+      // 将旧节点删除
       deleteRemainingChildren(returnFiber, oldFiber);
       return resultingFirstChild;
     }
-    // 老的节点创建完成，剩下的新的节点需要创建完成
+    // 老的节点被复用完了，但是新的节点列表还有节点需要创建
     if (oldFiber === null) {
       // If we don't have any more existing children we can choose a fast path
       // since the rest will all be insertions.
@@ -1080,18 +1092,20 @@ function ChildReconciler(shouldTrackSideEffects) {
 
     return resultingFirstChild;
   }
-
+  // 字符串或者数字的渲染方式
   function reconcileSingleTextNode(
     returnFiber: Fiber,
-    currentFirstChild: Fiber | null,
+    currentFirstChild: Fiber | null, //首次创建为null，非首次创建有值
     textContent: string,
     expirationTime: ExpirationTime,
   ): Fiber {
     // There's no need to check for keys on text nodes since we don't have a
     // way to define them.
+    // 如果当前节点已经有子节点并且子节点是字符串，
     if (currentFirstChild !== null && currentFirstChild.tag === HostText) {
       // We already have an existing node so let's just update it and delete
       // the rest.
+      // 将当前节点的子节点所有兄弟节点删除
       deleteRemainingChildren(returnFiber, currentFirstChild.sibling);
       const existing = useFiber(currentFirstChild, textContent, expirationTime);
       existing.return = returnFiber;
@@ -1099,6 +1113,7 @@ function ChildReconciler(shouldTrackSideEffects) {
     }
     // The existing first child is not a text node so we need to create one
     // and delete the existing ones.
+    // 将当前节点的子节点删除
     deleteRemainingChildren(returnFiber, currentFirstChild);
     const created = createFiberFromText(
       textContent,
@@ -1228,11 +1243,10 @@ function ChildReconciler(shouldTrackSideEffects) {
   // This API will tag the children with the side-effect of the reconciliation
   // itself. They will be added to the side-effect list as we pass through the
   // children and the parent.
-
   function reconcileChildFibers(
     returnFiber: Fiber, // workInProgress
-    currentFirstChild: Fiber | null, //  current.child
-    newChild: any, // nextChildren
+    currentFirstChild: Fiber | null, //  current.child,如果是首次创建，为null，非首次创建有值
+    newChild: any, // nextChildren,是reactElement元素吗？
     expirationTime: ExpirationTime,
   ): Fiber | null {
     // This function is not recursive.
@@ -1280,7 +1294,7 @@ function ChildReconciler(shouldTrackSideEffects) {
           );
       }
     }
-    // 字符串或者数字的渲染方式
+    // 字符串或者数字的渲染方式，很简单
     if (typeof newChild === 'string' || typeof newChild === 'number') {
       return placeSingleChild(
         reconcileSingleTextNode(
@@ -1291,7 +1305,7 @@ function ChildReconciler(shouldTrackSideEffects) {
         ),
       );
     }
-    // 数组的渲染方式
+    // 数组的渲染方式，很重要
     if (isArray(newChild)) {
       return reconcileChildrenArray(
         returnFiber,
@@ -1357,7 +1371,7 @@ function ChildReconciler(shouldTrackSideEffects) {
 
   return reconcileChildFibers;
 }
-
+// 返回的是一个方法
 export const reconcileChildFibers = ChildReconciler(true);
 export const mountChildFibers = ChildReconciler(false);
 

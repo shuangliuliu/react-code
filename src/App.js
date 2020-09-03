@@ -20,8 +20,7 @@ export default class App extends Component {
   render() {
     return (
       <div className="App">
-        <h6>this is App COmponent</h6>
-        <button onClick={this.handleClick.bind(this)}></button>
+        {[1, 2, 4, 5, 6]}
       </div>
     )
   }

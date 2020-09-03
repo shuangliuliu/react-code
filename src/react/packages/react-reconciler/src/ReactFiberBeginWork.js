@@ -147,7 +147,7 @@ if (__DEV__) {
   didWarnAboutFunctionRefs = {};
   didWarnAboutReassigningProps = false;
 }
-// 调用该方法说明已经更新完一个节点，现在要更新该节点的props.children，创建一个fiber子树
+// 调用该方法说明已经更新完当前节点，现在要更新该节点的props.children，创建一个fiber子树
 /*
  1、根据prop.children生成fiber子树
  2、判断fiber对象是否可以复用
@@ -156,15 +156,17 @@ if (__DEV__) {
 export function reconcileChildren(
   current: Fiber | null,
   workInProgress: Fiber,
-  nextChildren: any,
+  nextChildren: any,// reactElement元素
   renderExpirationTime: ExpirationTime,
 ) {
-  // 首次渲染：只有父节点，在之后的渲染中才会有子节点
+  // current = workInProgress.alternate
+  // 首次渲染current树只有RootFiber节点，其余子节点都为null
   if (current === null) {
     // If this is a fresh new component that hasn't been rendered yet, we
     // won't update its child set by applying minimal side-effects. Instead,
     // we will add them all to the child before it gets rendered. That means
     // we can optimize this reconciliation pass by not tracking side-effects.
+    // 如果是首次渲染，子节点是null，需要创建，所以current.child传递null
     workInProgress.child = mountChildFibers(
       workInProgress,
       null,
@@ -178,10 +180,11 @@ export function reconcileChildren(
 
     // If we had any progressed work already, that is invalid at this point so
     // let's throw it out.
+    // 非首次渲染，current.child已存在，需要更新
     workInProgress.child = reconcileChildFibers(
       workInProgress,
       current.child,
-      nextChildren,
+      nextChildren, // ？是什么
       renderExpirationTime,
     );
   }
@@ -618,12 +621,14 @@ function updateFunctionComponent(
   // React DevTools reads this flag.
   workInProgress.effectTag |= PerformedWork;
   // nextChildren是reactElement节点，所以需要将reactElement变为fiber对象才能更新
+  // 调用该方法是将reactElement元素转为fiber节点
   reconcileChildren(
     current,
     workInProgress,
     nextChildren,
     renderExpirationTime,
   );
+  // 返回的是即将更新的当前节点的子节点（也是fiber节点）
   return workInProgress.child;
 }
 
